@@ -1,0 +1,5 @@
+**/target
+**/*.ppu
+**/*.o
+**/backup
+**/lib

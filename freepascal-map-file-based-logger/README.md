@@ -1,0 +1,1 @@
+# freepascal-map-file-based-logger

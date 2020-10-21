@@ -1,0 +1,575 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="12"/>
+    <ManyBuildModesSelection Value="Release"/>
+    <BuildModes Active="Debug"/>
+    <Units>
+      <Unit>
+        <Filename Value="LogSectionWriter.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <TopLine Value="3"/>
+        <CursorPos X="19" Y="44"/>
+        <UsageCount Value="94"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\freepascal-addition-section-manipulator\src\custapp.addsectionmaniputlator.pas"/>
+        <UnitName Value="CustApp.AddSectionManiputlator"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="92"/>
+        <CursorPos X="160" Y="109"/>
+        <UsageCount Value="64"/>
+      </Unit>
+      <Unit>
+        <Filename Value="MapFileBasedLogger.MapFileBasedLogger.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="13"/>
+        <CursorPos X="31" Y="16"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="mapfilebasedlogger.appenders.pas"/>
+        <UnitName Value="MapFileBasedLogger.Appenders"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="104"/>
+        <CursorPos X="35" Y="122"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\inc\objpash.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="521"/>
+        <CursorPos X="35" Y="558"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="mapfilebasedlogger.basictypes.pas"/>
+        <UnitName Value="MapFileBasedLogger.BasicTypes"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="159"/>
+        <CursorPos X="5" Y="178"/>
+        <UsageCount Value="8"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\repositories\SimpleBaseLib4Pascal\SimpleBaseLib\src\Bases\SbpBase64.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="81"/>
+        <CursorPos X="33" Y="81"/>
+        <UsageCount Value="4"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\repositories\SimpleBaseLib4Pascal\SimpleBaseLib\src\Utils\SbpSimpleBaseLibTypes.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="3" Y="20"/>
+        <UsageCount Value="4"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\repositories\SimpleBaseLib4Pascal\SimpleBaseLib\src\Bases\SbpBase64Alphabet.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="7"/>
+        <CursorPos X="20" Y="47"/>
+        <UsageCount Value="4"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\inc\systemh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1577"/>
+        <CursorPos X="28" Y="1596"/>
+        <UsageCount Value="7"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\win\syswin.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="749"/>
+        <CursorPos X="10" Y="760"/>
+        <UsageCount Value="5"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\inc\compproc.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="63"/>
+        <CursorPos X="21" Y="82"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\inc\dynarr.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="585"/>
+        <CursorPos X="5" Y="500"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\objpas\classes\classesh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1130"/>
+        <CursorPos X="3" Y="1146"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\objpas\classes\streams.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="27"/>
+        <CursorPos X="3" Y="29"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\win\sysutils.pp"/>
+        <UnitName Value="SysUtils"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="333"/>
+        <CursorPos X="3" Y="337"/>
+        <UsageCount Value="12"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\objpas\sysutils\sysutils.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="292"/>
+        <CursorPos X="11" Y="299"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="MapFileBasedLogger.Logger.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="77"/>
+        <CursorPos X="73" Y="104"/>
+        <UsageCount Value="20"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\winunits-jedi\src\jwawinbase.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1944"/>
+        <CursorPos X="10" Y="1963"/>
+        <UsageCount Value="7"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\win\wininc\redef.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="402"/>
+        <CursorPos X="10" Y="421"/>
+        <UsageCount Value="7"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\win\wininc\ascdef.inc"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="10" Y="48"/>
+        <UsageCount Value="7"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\objpas\sysutils\filutilh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="182"/>
+        <CursorPos X="10" Y="220"/>
+        <UsageCount Value="8"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\winunits-jedi\src\jwawinnt.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="5464"/>
+        <CursorPos X="12" Y="5309"/>
+        <UsageCount Value="13"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\win\wininc\struct.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="8607"/>
+        <CursorPos X="3" Y="8621"/>
+        <UsageCount Value="8"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\winunits-jedi\src\jwawintype.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="126"/>
+        <CursorPos X="3" Y="144"/>
+        <UsageCount Value="8"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\paszlib\src\zstream.pp"/>
+        <UnitName Value="ZStream"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="102"/>
+        <CursorPos X="9" Y="118"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\fcl-base\src\base64.pp"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\freepascal-addition-section-manipulator\src\custapp.addionalsectionmanipulator.pas"/>
+        <UnitName Value="CustApp.AddionalSectionManipulator"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="24" Y="11"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\mapfilebasedlogger.appenders.pas"/>
+        <UnitName Value="MapFileBasedLogger.Appenders"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="106"/>
+        <CursorPos X="92" Y="121"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="284"/>
+        <CursorPos Y="302"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\freepascal-addition-section-manipulator\src\custapp.addsectionmaniputlator.pas"/>
+        <UnitName Value="CustApp.AddSectionManiputlator"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="58"/>
+        <CursorPos X="89" Y="80"/>
+        <UsageCount Value="19"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\fcl-json\src\fpjsonrtti.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="115"/>
+        <CursorPos X="68" Y="116"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\fcl-json\src\jsonparser.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="227"/>
+        <CursorPos X="36" Y="238"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\paszlib\src\gzio.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="205"/>
+        <CursorPos X="3" Y="141"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\freepascal-addition-section-manipulator\src\custapp.addionalsectionmanipulator.pas"/>
+        <UnitName Value="CustApp.AddionalSectionManipulator"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\paszlib\src\paszlib.pas"/>
+        <UnitName Value="PasZLib"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="93"/>
+        <CursorPos X="21" Y="109"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\paszlib\src\zcompres.pas"/>
+        <UnitName Value="ZCompres"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="31"/>
+        <CursorPos X="43" Y="29"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\zlib\src\zlib.pp"/>
+        <UnitName Value="ZLib"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="9"/>
+        <CursorPos X="5" Y="25"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\freepascal\fpc\source\rtl\objpas\classes\collect.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="138"/>
+        <CursorPos X="32" Y="153"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\freepascal\fpc\source\rtl\linux\linux.pp"/>
+        <UnitName Value="Linux"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="18"/>
+        <CursorPos X="42" Y="36"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\freepascal\fpc\source\rtl\unix\baseunix.pp"/>
+        <UnitName Value="BaseUnix"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="17"/>
+        <CursorPos X="41" Y="17"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\freepascal\fpc\source\rtl\unix\bunxh.inc"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="20" Y="26"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\repositories\pesp\PseFile.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="120"/>
+        <CursorPos X="39" Y="67"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\repositories\pesp\PseMzFile.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="15"/>
+        <CursorPos X="3" Y="32"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\repositories\pesp\PseNeFile.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="27"/>
+        <CursorPos X="36" Y="55"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\repositories\pesp\PseNe.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="22"/>
+        <CursorPos X="3" Y="14"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\repositories\pesp\PsePeFile.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="299"/>
+        <CursorPos X="58" Y="690"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\repositories\pesp\PseDebugInfo.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="48"/>
+        <CursorPos X="3" Y="25"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\repositories\pesp\PseElfFile.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="15"/>
+        <CursorPos X="5" Y="32"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\repositories\pesp\PseElf.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="89"/>
+        <CursorPos X="3" Y="106"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\freepascal\fpc\source\rtl\unix\unix.pp"/>
+        <UnitName Value="Unix"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1122"/>
+        <CursorPos X="33" Y="1139"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\..\..\repositories\pesp\PseImgLoader.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="15"/>
+        <CursorPos X="27" Y="33"/>
+        <UsageCount Value="10"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="25">
+      <Position>
+        <Filename Value="..\..\..\freepascal-addition-section-manipulator\src\custapp.addsectionmaniputlator.pas"/>
+        <Caret Line="143" TopLine="126"/>
+      </Position>
+      <Position>
+        <Filename Value="..\..\..\freepascal-addition-section-manipulator\src\custapp.addsectionmaniputlator.pas"/>
+        <Caret Line="150" TopLine="126"/>
+      </Position>
+      <Position>
+        <Filename Value="LogSectionWriter.lpr"/>
+        <Caret Line="41" Column="24" TopLine="30"/>
+      </Position>
+      <Position>
+        <Filename Value="LogSectionWriter.lpr"/>
+        <Caret Line="36" Column="69" TopLine="30"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="76" Column="20" TopLine="60"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="296" Column="54" TopLine="274"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="136" Column="34" TopLine="120"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="162" Column="51" TopLine="134"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="158" Column="38" TopLine="145"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="136" Column="15" TopLine="120"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="162" Column="52" TopLine="146"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="261" Column="60" TopLine="211"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="163" TopLine="148"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="301" TopLine="284"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="302" TopLine="284"/>
+      </Position>
+      <Position>
+        <Filename Value="..\..\..\freepascal-addition-section-manipulator\src\custapp.addsectionmaniputlator.pas"/>
+        <Caret Line="166" TopLine="150"/>
+      </Position>
+      <Position>
+        <Filename Value="LogSectionWriter.lpr"/>
+        <Caret Line="36" TopLine="26"/>
+      </Position>
+      <Position>
+        <Filename Value="..\..\..\freepascal-addition-section-manipulator\src\custapp.addsectionmaniputlator.pas"/>
+        <Caret Line="164" TopLine="147"/>
+      </Position>
+      <Position>
+        <Filename Value="LogSectionWriter.lpr"/>
+        <Caret Line="38" TopLine="26"/>
+      </Position>
+      <Position>
+        <Filename Value="LogSectionWriter.lpr"/>
+        <Caret Line="40" TopLine="26"/>
+      </Position>
+      <Position>
+        <Filename Value="LogSectionWriter.lpr"/>
+        <Caret Line="42" TopLine="26"/>
+      </Position>
+      <Position>
+        <Filename Value="..\..\..\freepascal-addition-section-manipulator\src\custapp.addsectionmaniputlator.pas"/>
+        <Caret Line="164" TopLine="147"/>
+      </Position>
+      <Position>
+        <Filename Value="LogSectionWriter.lpr"/>
+        <Caret Line="44" TopLine="26"/>
+      </Position>
+      <Position>
+        <Filename Value="LogSectionWriter.lpr"/>
+        <Caret Line="45" TopLine="26"/>
+      </Position>
+      <Position>
+        <Filename Value="..\..\..\freepascal-addition-section-manipulator\src\custapp.addsectionmaniputlator.pas"/>
+        <Caret Line="166" TopLine="131"/>
+      </Position>
+      <Position>
+        <Filename Value="..\..\..\freepascal-addition-section-manipulator\src\custapp.addsectionmaniputlator.pas"/>
+        <Caret Line="139" Column="3" TopLine="58"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode="default">
+        <Mode Name="default">
+          <local>
+            <CommandLineParams Value="-f ~\develop\projects\family-budget\family-budget-server\target\FamilyBudgetServerApplication"/>
+            <Display Use="True"/>
+          </local>
+        </Mode>
+      </Modes>
+    </RunParams>
+    <HistoryLists>
+      <List Name="LaunchingApplication" Type="File" Count="2">
+        <Item1 Value="C:\Windows\system32\cmd.exe /C ${TargetCmdLine}"/>
+        <Item2 Value="/usr/bin/gnome-terminal -t &apos;Lazarus Run Output&apos; -e &apos;$(LazarusDir)/tools/runwait.sh $(TargetCmdLine)&apos;"/>
+      </List>
+      <List Name="CommandLineParameters" Count="6">
+        <Item1 Value="-f ~/develop/projects/family-budget/family-budget-server/target/FamilyBudgetServerApplication"/>
+        <Item2 Value="-f ~/develop/projects/family-budget-server/target/FamilyBudgetServerApplication"/>
+        <Item3 Value="-f ~/develop/projects/personal/family-budget-server/target/FamilyBudgetServerApplication"/>
+        <Item4 Value="-f e:/develop/personal/family-budget-server/target/FamilyBudgetServerApplication"/>
+        <Item5 Value="-f e:\develop\personal\family-budget-server\target\FamilyBudgetServerApplication.exe"/>
+        <Item6 Value="-f e:/develop/personal/family-budget-server/target/FamilyBudgetServerApplication.exe"/>
+      </List>
+    </HistoryLists>
+  </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="LogSectionWriter.lpr"/>
+        <Line Value="45"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="LogSectionWriter.lpr"/>
+        <Line Value="44"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="LogSectionWriter.lpr"/>
+        <Line Value="42"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="LogSectionWriter.lpr"/>
+        <Line Value="47"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="LogSectionWriter.lpr"/>
+        <Line Value="40"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="LogSectionWriter.lpr"/>
+        <Line Value="38"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="LogSectionWriter.lpr"/>
+        <Line Value="36"/>
+      </Item>
+    </BreakPoints>
+    <Watches>
+      <Item>
+        <Expression Value="FAdditionalSectionCollection"/>
+      </Item>
+    </Watches>
+  </Debugging>
+</CONFIG>

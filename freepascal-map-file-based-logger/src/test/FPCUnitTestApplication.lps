@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="12"/>
+    <BuildModes Active="Debug"/>
+    <Units>
+      <Unit>
+        <Filename Value="FPCUnitTestApplication.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="3"/>
+        <CursorPos X="18" Y="7"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="mainunit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="mainUnit"/>
+        <CursorPos X="30" Y="8"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\repositories\laz-codecoverage-helper-master\source\CodeCoverage.FPCUnit.GuiTestRunner.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="37"/>
+        <CursorPos X="34" Y="93"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\MapFileBasedLogger.MapFileBasedLogger.pas"/>
+        <EditorIndex Value="2"/>
+        <CursorPos X="22" Y="66"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\mapfilebasedlogger.appenders.pas"/>
+        <UnitName Value="MapFileBasedLogger.Appenders"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="82"/>
+        <CursorPos X="40" Y="112"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\..\..\repositories\laz-codecoverage-helper-master\source\CodeCoverage.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="609"/>
+        <CursorPos X="27" Y="514"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\rtl\inc\objpash.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="189"/>
+        <CursorPos X="23" Y="208"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\fpcsrc\packages\fcl-base\src\contnrs.pp"/>
+        <UnitName Value="Contnrs"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="805"/>
+        <CursorPos X="3" Y="807"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\lazarus\components\fpcunit\guitestrunner.pas"/>
+        <UnitName Value="GuiTestRunner"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\lazarus\components\lazdebuggers\lazdebuggerfpgdbmi\fpgdbmidebugger.pp"/>
+        <UnitName Value="FpGdbmiDebugger"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="185"/>
+        <CursorPos X="58" Y="208"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\lazarus\components\fpcunit\fpcunittestrunner.pas"/>
+        <UnitName Value="FPCUnitTestRunner"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="16" Y="11"/>
+        <UsageCount Value="10"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="11">
+      <Position>
+        <Filename Value="FPCUnitTestApplication.lpr"/>
+        <Caret Line="6" Column="65"/>
+      </Position>
+      <Position>
+        <Filename Value="FPCUnitTestApplication.lpr"/>
+        <Caret Line="13" Column="37"/>
+      </Position>
+      <Position>
+        <Filename Value="mainunit.pas"/>
+        <Caret Line="41" Column="5" TopLine="4"/>
+      </Position>
+      <Position>
+        <Filename Value="mainunit.pas"/>
+        <Caret Line="22" TopLine="4"/>
+      </Position>
+      <Position>
+        <Filename Value="..\MapFileBasedLogger.MapFileBasedLogger.pas"/>
+        <Caret Line="66" Column="22"/>
+      </Position>
+      <Position>
+        <Filename Value="mainunit.pas"/>
+        <Caret Line="28" Column="20" TopLine="4"/>
+      </Position>
+      <Position>
+        <Filename Value="FPCUnitTestApplication.lpr"/>
+        <Caret Line="13" Column="37"/>
+      </Position>
+      <Position>
+        <Filename Value="FPCUnitTestApplication.lpr"/>
+        <Caret Line="6" Column="36"/>
+      </Position>
+      <Position>
+        <Filename Value="FPCUnitTestApplication.lpr"/>
+        <Caret Line="16" Column="21"/>
+      </Position>
+      <Position>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\lazarus\components\lazdebuggers\lazdebuggerfpgdbmi\fpgdbmidebugger.pp"/>
+        <Caret Line="963" Column="31" TopLine="944"/>
+      </Position>
+      <Position>
+        <Filename Value="D:\remote_work_bogomolov\instruments\fpcupdeluxe\lazarus\components\lazdebuggers\lazdebuggerfpgdbmi\fpgdbmidebugger.pp"/>
+        <Caret Line="208" Column="58" TopLine="185"/>
+      </Position>
+      <Position>
+        <Filename Value="FPCUnitTestApplication.lpr"/>
+        <Caret Line="13" Column="26"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>
