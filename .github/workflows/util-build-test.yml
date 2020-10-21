@@ -16,5 +16,5 @@ jobs:
 
       - name: build and tests
         run: |
-          docker run -v .:/root/app/ -v./target:/root/app/target/ -i ghcr.io/bogomolov-a-a/free-pascal-with-lazbuild-trunk:latest ls -a
+          docker run -v "$(pwd)":/root/app/ -v "$(pwd)"/target:/root/app/target/ -i ghcr.io/bogomolov-a-a/free-pascal-with-lazbuild-trunk:latest ls -a
         
