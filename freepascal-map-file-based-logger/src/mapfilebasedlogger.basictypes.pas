@@ -199,7 +199,6 @@ type
     property CallableInfoList: TCollection read FCallableInfoList;
   end;
 
-
   {Parsed callable info.}
   TCallableInfo = class(TCollectionItem)
   strict private

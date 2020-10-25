@@ -33,10 +33,15 @@ type
     procedure Log(LogLevel: TLogLevel; const Msg: string);
   end;
 
+const
+  LOG_DATA_SECTION_NAME: string = 'LOG_DATA';
+
+type
   { IMapFileInfoManipulator presents methods for load data from executable file location,
   read and write section from executable file. These methods are necessary for saving
   log information by build application CI/CD stage.}
   IMapFileInfoManipulator = interface
+
     {Try to load map file info from MapFilePath.@br
     After loading file located at MapFilePath will be deleted.
     @param ExeFilePath executable file location.}
@@ -73,8 +78,8 @@ type
   { TMapFileInfoManipulatorFactory }
 
   TMapFileInfoManipulatorFactory = class
-    class function CreateMapFileInfoManipulator(ExeFilePath: string):
-      IMapFileInfoManipulator;
+    class function CreateMapFileInfoManipulator(ExeFilePath: string;
+      IsSectionCheck: boolean = False): IMapFileInfoManipulator;
   end;
 
 resourcestring
@@ -87,10 +92,8 @@ uses
   SysUtils,
   Types,
   Classes,
-  fpjsonrtti,
-  fpjson,
-  PasZLib,
   LazFileUtils,
+  common.Data.Mapper,
   CustApp.AddSectionManiputlator;
 
 type
@@ -117,6 +120,7 @@ type
   strict private
     FMapFileInfo: TMapFileInfo;
     FInitialized: boolean;
+    FSupportedMapper: IDataMapper;
   private
   const
     MAP_FILE_EXTENSION = '.map';
@@ -132,56 +136,34 @@ type
     @param Strings array of lines map file data.
     @returns index of first line that contains '.data' string.}
     function GetDataSectionIndex(Strings: TStrings): integer;
-    function ReadLogSectionData(ExeFileName: string): TBytes;
-    procedure WriteLogSectionData(ExeFileName: string; Data: TBytes);
+    function ReadLogSectionData(ExeFileName: string): string;
+    procedure WriteLogSectionData(ExeFileName: string; Data: string);
+  public
+    constructor Create;
+    destructor Destroy; override;
   public
     procedure AppendSectionToExecutable(ExeFilePath: string);
     function FindCallerInfoByAddress(CallerPointer: CodePointer): TCallableInfo;
     procedure LoadMapFile(ExeFilePath: string);
     function ReadSectionFromExecutable(ExeFilePath: string): boolean;
-    destructor Destroy; override;
+
   end;
 
 function TMapFileInfoManipulator.GetMapFilePath(ExeFilePath: string): string;
 begin
-  Result := ExeFilePath + MAP_FILE_EXTENSION;
+  Result := ExeFilePath+MAP_FILE_EXTENSION;
 end;
 
 procedure TMapFileInfoManipulator.AppendSectionToExecutable(ExeFilePath: string);
 var
   MapInfoJsonData: string;
-  JsonStreamer: TJSONStreamer;
-  CompressedBase64String: TBytes;
 begin
   if FInitialized then
     exit;
-  JsonStreamer := TJSONStreamer.Create(nil);
-  MapInfoJsonData := JsonStreamer.ObjectToJSONString(FMapFileInfo);
-  FreeAndNil(JsonStreamer);
-  // CompressedBase64String := CompressMapInfoToGzip(MapInfoJsonData);
-  WriteLogSectionData(ExeFilePath, TEncoding.UTF8.GetBytes(MapInfoJsonData));
+  MapInfoJsonData := FSupportedMapper.SerializeTo(FMapFileInfo, TMapFileInfo);
+  WriteLogSectionData(ExeFilePath, MapInfoJsonData);
   FInitialized := True;
 end;
-
-{function TMapFileInfoManipulator.CompressMapInfoToGzip(MapInfoJsonData: string): TBytes;
-var
-  CompressStream:     TZipper;
-  TargetFileStream:   TBytesStream;
-  SourceStringStream: TStringStream;
-begin
-  SourceStringStream := TStringStream.Create(MapInfoJsonData);
-  TargetFileStream   := TBytesStream.Create();
-  CompressStream     := Tcompressionstream.Create(Tcompressionlevel.cldefault,
-    TargetFileStream);
-  try
-    CompressStream.SourceOwner := True;
-    CompressStream.CopyFrom(SourceStringStream, 0);
-    Result := TargetFileStream.Bytes;
-  finally
-    FreeAndNil(CompressStream);
-    FreeAndNil(SourceStringStream);
-  end;
-end;}
 
 function TMapFileInfoManipulator.FindCallerInfoByAddress(
   CallerPointer: CodePointer): TCallableInfo;
@@ -209,7 +191,8 @@ begin
   //DeleteFile(MapFilePath);
 end;
 
-function TMapFileInfoManipulator.LoadTrimmedMapFile(MapFilePath: string): TStringDynArray;
+function TMapFileInfoManipulator.LoadTrimmedMapFile(MapFilePath: string):
+TStringDynArray;
 var
   MapFileData: TStringList;
   MemoryMapIndex: integer;
@@ -244,68 +227,69 @@ end;
 
 function TMapFileInfoManipulator.ReadSectionFromExecutable(ExeFilePath: string): boolean;
 var
-  JsonDeStreamer: TJSONDeStreamer;
+
   MapInfoJsonData: string;
-  SectionData: TBytes;
 begin
   Result := False;
   if FInitialized then
+  begin
+    Result := True;
     exit;
-  SectionData := ReadLogSectionData(ExeFilePath);
-  if SectionData = nil then
+  end;
+  MapInfoJsonData := string(ReadLogSectionData(ExeFilePath));
+  if trim(MapInfoJsonData) = '' then
     exit;
-  //  MapInfoJsonData := DecompressGzData(SectionData);
-  SetLength(SectionData, 0);
-  FMapFileInfo := TMapFileInfo.Create();
-  JsonDeStreamer := TJSONDeStreamer.Create(nil);
-  JsonDeStreamer.JSONToObject(MapInfoJsonData, FMapFileInfo);
-  FreeAndNil(JsonDeStreamer);
+  FMapFileInfo := FSupportedMapper.DeSerializeFrom(MapInfoJsonData, TMapFileInfo) as
+    TMapFileInfo;
   FInitialized := True;
+  Result := True;
 end;
 
-{function TMapFileInfoManipulator.DecompressGzData(Data: TBytes): string;
+function TMapFileInfoManipulator.ReadLogSectionData(ExeFileName: string): string;
 var
-  DeCompressStream: TDeCompressionStream;
-  SourceFileStream: TBytesStream;
-  TargetStringStream: TStringList;
-  Count: integer;
+  AdditionalSectionManipulator: IAdditionalSectionManipulator;
 begin
+  AdditionalSectionManipulator :=
+    TAdditionalSectionManipulatorFactory.CreateAdditionalSectionManipulator(ExeFileName);
   Result := '';
-  SourceFileStream := TBytesStream.Create(Data);
-  DeCompressStream := TDeCompressionStream.Create(SourceFileStream);
-  TargetStringStream := TStringList.Create();
   try
-    TargetStringStream.LoadFromStream(DeCompressStream);
-    Result := TargetStringStream.Text;
+    try
+      Result := AdditionalSectionManipulator.ReadSectionDataByName(
+        LOG_DATA_SECTION_NAME);
+    except
+      on e: Exception do
+        writeln(format('Section not found, cause: %s.', [e.Message]));
+    end;
   finally
-    FreeAndNil(TargetStringStream);
-    FreeAndNil(DeCompressStream);
-    FreeAndNil(SourceFileStream);
+    AdditionalSectionManipulator := nil;
   end;
-end;}
-
-function TMapFileInfoManipulator.ReadLogSectionData(ExeFileName: string): TBytes;
-var
-  AddSectionManiputlator: TAddSectionManiputlator;
-begin
-  AddSectionManiputlator := TAddSectionManiputlator.Create(ExeFileName);
-  Result := AddSectionManiputlator.ReadSectionDataAsBytesAt(0);
-  FreeAndNil(AddSectionManiputlator);
 end;
 
 procedure TMapFileInfoManipulator.WriteLogSectionData(ExeFileName: string;
-  Data: TBytes);
+  Data: string);
 var
-  AddSectionManiputlator: TAddSectionManiputlator;
+  AdditionalSectionManipulator: IAdditionalSectionManipulator;
 begin
-  AddSectionManiputlator := TAddSectionManiputlator.Create(ExeFileName);
-  AddSectionManiputlator.WriteDataSection(Data);
-  FreeAndNil(AddSectionManiputlator);
+  AdditionalSectionManipulator :=
+    TAdditionalSectionManipulatorFactory.CreateAdditionalSectionManipulator(ExeFileName);
+  try
+    AdditionalSectionManipulator.WriteDataSection(LOG_DATA_SECTION_NAME, Data);
+  finally
+    AdditionalSectionManipulator := nil;
+  end;
+
+end;
+
+constructor TMapFileInfoManipulator.Create;
+begin
+  FInitialized := False;
+  FSupportedMapper := TDataMapperFactory.CreateDataMapper(mtJSON);
 end;
 
 destructor TMapFileInfoManipulator.Destroy;
 begin
   FreeAndNil(FMapFileInfo);
+  FSupportedMapper:=nil;
   FInitialized := False;
   inherited Destroy;
 end;
@@ -313,11 +297,18 @@ end;
 { TMapFileInfoManipulatorFactory }
 
 class function TMapFileInfoManipulatorFactory.CreateMapFileInfoManipulator(
-  ExeFilePath: string): IMapFileInfoManipulator;
+  ExeFilePath: string; IsSectionCheck: boolean): IMapFileInfoManipulator;
+var
+  IsSectionExists: boolean;
 begin
   Result := TMapFileInfoManipulator.Create;
+  IsSectionExists := False;
   {Try to read data section from executable.}
-  if Result.ReadSectionFromExecutable(ExeFilePath) then
+  IsSectionExists := Result.ReadSectionFromExecutable(ExeFilePath);
+
+  if not IsSectionExists and IsSectionCheck then
+    raise EFCreateError.Create('Log section excepted but not found!');
+  if IsSectionExists then
     exit;
   {The section is empty. Try to load info from map file.}
   Result.LoadMapFile(ExtractFileNameWithoutExt(ExeFilePath));

@@ -148,7 +148,7 @@ var
 begin
   FullMessage := FullMessage + LineEnding;
   MessageLength := Length(FullMessage);
-  Count := GetCurrentFileStream().WriteData(PChar(@FullMessage[1]), MessageLength);
+  Count := GetCurrentFileStream().Write(FullMessage, MessageLength);
   result:=MessageLength = Count;
 end;
 

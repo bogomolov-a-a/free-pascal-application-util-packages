@@ -1,18 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <Package Version="4">
-    <PathDelim Value="\"/>
-    <Name Value="CustApp.Helper.Signature"/>
+    <Name Value="FreePascalApplicationCommon"/>
     <Type Value="RunTimeOnly"/>
-    <Author Value="Bogomolov Artem A.(artem.bogomolov.a@gmail.com)"/>
+    <Author Value="Bogomolov Artem A (artem.bogomolov.a@gmail.com)"/>
     <CompilerOptions>
       <Version Value="11"/>
-      <PathDelim Value="\"/>
       <SearchPaths>
-        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+        <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
     </CompilerOptions>
-    <Description Value="Custom application signature helper. Validating application signature."/>
+    <Description Value="Common application util classes, common test util classes and others..."/>
     <License Value="GNU LESSER GENERAL PUBLIC LICENSE
 Version 3, 29 June 2007
 
@@ -69,16 +67,20 @@ The Free Software Foundation may publish revised and/or new versions of the GNU 
 Each version is given a distinguishing version number. If the Library as you received it specifies that a certain numbered version of the GNU Lesser General Public License “or any later version” applies to it, you have the option of following the terms and conditions either of that published version or of any later version published by the Free Software Foundation. If the Library as you received it does not specify a version number of the GNU Lesser General Public License, you may choose any version of the GNU Lesser General Public License ever published by the Free Software Foundation.
 
 If the Library as you received it specifies that a proxy can decide whether future versions of the GNU Lesser General Public License shall apply, that proxy's public statement of acceptance of any version is permanent authorization for you to choose that version for the Library."/>
-    <Version Release="1" Build="1"/>
-    <Files Count="2">
+    <Version Minor="1"/>
+    <Files Count="3">
       <Item1>
-        <Filename Value="custapp.helper.sign.pas"/>
-        <UnitName Value="CustApp.Helper.Sign"/>
+        <Filename Value="custapp.test.selfcheckingapp.pas"/>
+        <UnitName Value="CustApp.test.selfcheckingapp"/>
       </Item1>
       <Item2>
-        <Filename Value="custapp.helper.signature.pas"/>
-        <UnitName Value="CustApp.Helper.Signature"/>
+        <Filename Value="common.data.compressor.pas"/>
+        <UnitName Value="common.Data.compressor"/>
       </Item2>
+      <Item3>
+        <Filename Value="common.data.mapper.pas"/>
+        <UnitName Value="common.data.mapper"/>
+      </Item3>
     </Files>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>
