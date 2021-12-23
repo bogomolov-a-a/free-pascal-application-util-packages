@@ -16,7 +16,7 @@ function cloneRepo() {
 } 
 
 cloneRepo 'https://github.com/bogomolov-a-a/pesp.git' 
-cloneRepo 'https://github.com/Xor-el/HashLib4Pascal.git'
+cloneRepo 'https://github.com/bogomolov-a-a/HashLib4Pascal.git'
 
 if [ $? -ne 0 ];
 then 
