@@ -131,6 +131,7 @@ type
   private
     property Modified: boolean read FModified;
     constructor Create(AName: string; AData: TBytes; AHash: IHash);
+    procedure Fetch(AStream: TMemoryStream; ABasicOffset: SizeInt);
   public
     {compressed data}
     property Data: TBytes read FData write FData;
@@ -181,11 +182,14 @@ type
     FAdditionalSectionCollectionData: string;
     FHash: string;
     FHashAlg: string;
+    procedure CheckTable();
   private
     property AdditionalSectionCollection: TAdditionalSectionCollection
       read FAdditionalSectionCollection write FAdditionalSectionCollection;
     function Flush(TableSize: SizeInt; out Count: SizeInt): TBytes;
-    procedure Fetch();
+    procedure Fetch(AStream: TMemoryStream; ABasicOffset: SizeInt);
+  public
+    destructor Destroy; override;
   published
     property Hash: string read FHash write FHash;
     property HashAlg: string read FHashAlg write FHashAlg;
@@ -224,6 +228,7 @@ type
     function CheckSectionTableAvailable(): boolean;
     procedure Fetch();
     procedure Flush();
+    function ReadSectionTableData(): TBytes;
   public
     constructor Create(ExeFilePath: string);
     destructor Destroy; override;
@@ -263,6 +268,11 @@ begin
   HashValue := nil;
 end;
 
+procedure TAdditionalSection.Fetch(AStream: TMemoryStream; ABasicOffset: SizeInt);
+begin
+  FData:=;
+end;
+
 { TAdditionalSectionCollectionEnumerator }
 function TAdditionalSectionCollectionEnumerator.GetCurrent: TAdditionalSection;
 begin
@@ -299,26 +309,30 @@ begin
 end;
 
 { TAdditionalSectionTable }
-procedure TAdditionalSectionTable.Fetch();
+procedure TAdditionalSectionTable.Fetch(AStream: TMemoryStream; ABasicOffset: SizeInt);
+var
+  EvaluatedHash: string;
+  AdditionalSection: TAdditionalSection;
 begin
-  if (FAdditionalSectionTable.HashAlg <> SupportedHash.GetName) then
-    raise ESectionTableReadError.CreateFmt('Unsupported hash algorithm ''%s''',
-      [FAdditionalSectionTable.HashAlg]);
-  EvaluatedHash := SupportedHash.ComputeString(
-    FAdditionalSectionTable.AdditionalSectionCollectionData,
-    SupportedEncoding).ToString();
-  if FAdditionalSectionTable.Hash <> EvaluatedHash then
-    raise ESectionTableReadError.CreateFmt('Wrong hash value ''%s''',
-      [FAdditionalSectionTable.Hash]);
-  AdditionalSectionCollection :=
-    SupportedMapper.DeSerializeFrom(
-    FAdditionalSectionTable.AdditionalSectionCollectionData,
+  CheckTable();
+  FAdditionalSectionCollection :=
+    SupportedMapper.DeSerializeFrom(FAdditionalSectionCollectionData,
     TAdditionalSectionCollection) as TAdditionalSectionCollection;
-
-  for AdditionalSection in FAdditionalSectionTable.AdditionalSectionCollection do
+  for AdditionalSection in FAdditionalSectionCollection do
   begin
-    //    AdditionalSection.CompressedDataOffset;
+    AdditionalSection.Fetch(AStream,ABasicOffset);
   end;
+end;
+
+procedure TAdditionalSectionTable.CheckTable();
+begin
+  if (FHashAlg <> SupportedHash.GetName) then
+    raise ESectionTableReadError.CreateFmt('Unsupported hash algorithm ''%s''',
+      [FHashAlg]);
+  EvaluatedHash := SupportedHash.ComputeString(
+    FAdditionalSectionCollectionData, SupportedEncoding).ToString();
+  if FHash <> EvaluatedHash then
+    raise ESectionTableReadError.CreateFmt('Wrong hash value ''%s''', [FHash]);
 end;
 
 destructor TAdditionalSectionTable.Destroy;
@@ -326,6 +340,7 @@ begin
   FreeAndNil(FAdditionalSectionCollection);
   inherited Destroy;
 end;
+
 { TAdditionalSectionManiputlator }
 constructor TAdditionalSectionManipulator.Create(ExeFilePath: string);
 begin
@@ -508,21 +523,49 @@ end;
 
 procedure TAdditionalSectionManipulator.Fetch();
 var
-  CompressedSectionTableSize: SizeInt;
-  ActualCompressedSectionTableSize: SizeInt;
-  Data, RawData: TBytes;
-  EvaluatedHash: string;
-  AdditionalSection: TAdditionalSection;
+  RawData: TBytes;
+  PreparedStream: TMemoryStream;
 begin
   if FInitialized then
     raise ESectionTableReadError.Create('Section table already initialized!');
-  CompressedSectionTableSize := GetSectionTableSize();
   FExeFileStream.Seek(FBaseSectionTableOffset, TSeekOrigin.soBeginning);
   if not CheckSectionTableAvailable() then
   begin
     writeln('Section table not found!');
     exit;
   end;
+  RawData := ReadSectionTableData();
+  FAdditionalSectionTable := SupportedMapper.DeSerializeFrom(
+    RawData, TEncoding.UTF8, TAdditionalSectionTable) as TAdditionalSectionTable;
+  PreparedStream := PrepareSectionDataStream();
+  try
+    FAdditionalSectionTable.Fetch(PreparedStream,FBaseRawDataOffset);
+  finally
+    FreeAndNil(PreparedStream);
+  end;
+end;
+
+function TAdditionalSectionManipulator.PrepareSectionDataStream(): TMemoryStream;
+var
+  TotalNumberOfBytes: SizeInt;
+begin
+  Result := TMemoryStream.Create;
+  TotalNumberOfBytes := FExeFileStream.Size - FBaseRawDataOffset;
+  Result.SetSize(TotalNumberOfBytes);
+  FExeFileStream.Position := FBaseRawDataOffset;
+  if Result.CopyFrom(FExeFileStream, TotalNumberOfBytes) <> TotalNumberOfBytes then
+    raise ESectionTableReadError.CreateFmt('Stream corrupted. Total Size: %d',
+      [TotalNumberOfBytes]);
+end;
+
+function TAdditionalSectionManipulator.ReadSectionTableData(): TBytes;
+var
+  CompressedSectionTableSize: SizeInt;
+  ActualCompressedSectionTableSize: SizeInt;
+  Data: TBytes;
+begin
+  SetLength(Result, 0);
+  CompressedSectionTableSize := GetSectionTableSize();
   ActualCompressedSectionTableSize := FExeFileStream.ReadDWord;
   if (ActualCompressedSectionTableSize > CompressedSectionTableSize) then
     raise ESectionTableReadError.CreateFmt(
@@ -532,10 +575,7 @@ begin
   if FExeFileStream.Read(Data, ActualCompressedSectionTableSize) <>
     ActualCompressedSectionTableSize then
     raise ESectionTableReadError.Create('Section table data corrupted!');
-  RawData := SupportedCompressor.DeCompressDataGzip(Data);
-  FAdditionalSectionTable := SupportedMapper.DeSerializeFrom(
-    RawData, TEncoding.UTF8, TAdditionalSectionTable) as TAdditionalSectionTable;
-  FAdditionalSectionTable.Fetch();
+  Result := SupportedCompressor.DeCompressDataGzip(Data);
 end;
 
 procedure TAdditionalSectionManipulator.Flush();
