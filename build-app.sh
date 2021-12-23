@@ -1,11 +1,11 @@
 #prepare 
-function clearResoures {
+function clearResoures() {
   echo 'removing pesp'
   rm -rf pesp
   echo 'pesp removed'
 }
-function cloneRepo
-{
+
+function cloneRepo() {
   git clone $1
   return $?
 } 
