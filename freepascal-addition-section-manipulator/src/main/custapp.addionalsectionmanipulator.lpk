@@ -3,6 +3,7 @@
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="CustApp.AddionalSectionManipulator"/>
+    <Type Value="RunAndDesignTime"/>
     <Author Value="Bogomolov Artem A.(artem.bogomolov.a@gmail.com)"/>
     <CompilerOptions>
       <Version Value="11"/>
