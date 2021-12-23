@@ -2,7 +2,7 @@
 <CONFIG>
   <Package Version="4">
     <Name Value="FreePascalApplicationCommon"/>
-    <Type Value="RunTimeOnly"/>
+    <Type Value="RunAndDesignTime"/>
     <Author Value="Bogomolov Artem A (artem.bogomolov.a@gmail.com)"/>
     <CompilerOptions>
       <Version Value="11"/>
@@ -79,7 +79,7 @@ If the Library as you received it specifies that a proxy can decide whether futu
       </Item2>
       <Item3>
         <Filename Value="common.data.mapper.pas"/>
-        <UnitName Value="common.data.mapper"/>
+        <UnitName Value="common.Data.Mapper"/>
       </Item3>
     </Files>
     <UsageOptions>
