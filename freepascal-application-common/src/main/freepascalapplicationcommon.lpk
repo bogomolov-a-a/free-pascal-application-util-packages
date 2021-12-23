@@ -2,7 +2,6 @@
 <CONFIG>
   <Package Version="4">
     <Name Value="FreePascalApplicationCommon"/>
-    <Type Value="RunAndDesignTime"/>
     <Author Value="Bogomolov Artem A (artem.bogomolov.a@gmail.com)"/>
     <CompilerOptions>
       <Version Value="11"/>
