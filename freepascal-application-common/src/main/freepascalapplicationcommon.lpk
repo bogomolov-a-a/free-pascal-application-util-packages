@@ -68,7 +68,7 @@ Each version is given a distinguishing version number. If the Library as you rec
 
 If the Library as you received it specifies that a proxy can decide whether future versions of the GNU Lesser General Public License shall apply, that proxy's public statement of acceptance of any version is permanent authorization for you to choose that version for the Library."/>
     <Version Minor="1"/>
-    <Files Count="3">
+    <Files Count="4">
       <Item1>
         <Filename Value="custapp.test.selfcheckingapp.pas"/>
         <UnitName Value="CustApp.test.selfcheckingapp"/>
@@ -81,7 +81,16 @@ If the Library as you received it specifies that a proxy can decide whether futu
         <Filename Value="common.data.mapper.pas"/>
         <UnitName Value="common.Data.Mapper"/>
       </Item3>
+      <Item4>
+        <Filename Value="freepascalapplicationcommon.pas"/>
+        <UnitName Value="FreePascalApplicationCommon"/>
+      </Item4>
     </Files>
+    <RequiredPkgs Count="1">
+      <Item1>
+        <PackageName Value="FCL"/>
+      </Item1>
+    </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>
     </UsageOptions>

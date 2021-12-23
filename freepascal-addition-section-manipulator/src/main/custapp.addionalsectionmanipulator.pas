@@ -8,7 +8,8 @@ unit CustApp.AddionalSectionManipulator;
 interface
 
 uses
-  CustApp.AddSectionManiputlator;
+  CustApp.AddSectionManiputlator,
+  LazarusPackageIntf;
 
 implementation
 

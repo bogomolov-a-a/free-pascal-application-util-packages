@@ -8,7 +8,8 @@ unit FreePascalApplicationCommon;
 interface
 
 uses
-  CustApp.test.selfcheckingapp, common.Data.compressor, common.Data.Mapper;
+  CustApp.test.selfcheckingapp, common.Data.compressor, common.Data.Mapper,
+  LazarusPackageIntf;
 
 implementation
 
