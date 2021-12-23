@@ -30,7 +30,8 @@ then
   clearResoures
   exit 1;
 fi
-../lazarus/share/lazarus/lazbuild -B -r --verbose --lazarusdir=/root/lazarus/share/lazarus --compiler=/root/fpc/ppcx64 --add-package pesp/src/main/pesp.lpk --add-package HashLib4Pascal/HashLib/src/Packages/FPC/HashLib4PascalPackage.lpk --add-package freepascal-application-common/src/main/freepascalapplicationcommon.lpk freepascal-addition-section-manipulator/src/main/custapp.addionalsectionmanipulator.lpk
+#--add-package pesp/src/main/pesp.lpk --add-package HashLib4Pascal/HashLib/src/Packages/FPC/HashLib4PascalPackage.lpk --add-package freepascal-application-common/src/main/freepascalapplicationcommon.lpk 
+../lazarus/share/lazarus/lazbuild -B -r --verbose --lazarusdir=/root/lazarus/share/lazarus --compiler=/root/fpc/ppcx64 freepascal-addition-section-manipulator/src/main/custapp.addionalsectionmanipulator.lpk
 if [ $? -ne 0 ];
 then 
   clearResoures
