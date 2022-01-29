@@ -8,9 +8,14 @@ unit CustApp.AddionalSectionManipulator;
 interface
 
 uses
-  CustApp.AddSectionManiputlator,
-  LazarusPackageIntf;
+  CustApp.AddSectionManiputlator, LazarusPackageIntf;
 
 implementation
 
+procedure Register;
+begin
+end;
+
+initialization
+  RegisterPackage('CustApp.AddionalSectionManipulator', @Register);
 end.

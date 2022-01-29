@@ -4,13 +4,16 @@
 
 interface
 
-uses Classes, SysUtils;
+uses Classes, common.autocloseable, SysUtils;
 
 type
 
-  { IAdditionalSectionManipulator }
-
-  IAdditionalSectionManipulator = interface
+  { IAdditionalSectionManager
+    Provides methods for read and write additional resource section into executable
+    file.
+  }
+  IAdditionalSectionManager = interface(IAutoCloseable)
+    ['{944DF94F-E0DE-43A7-8149-B08D933971DC}']
     {Return initialized(may be empty) list of section names who has been written
     into binary file.}
     function GetSectionNames(): TStringList;
@@ -46,34 +49,34 @@ type
      @throw ESectionReadError if section by name not found.
      @return raw byte array representation of section content.
     }
-    function ReadSectionDataAsBytesByName(Name: string): TBytes;
+    function ReadSectionDataAsBytesByName(Name: string): TBytesStream;
     {
      Retrieves maximum section table size available for writing in section table
-     @param Name section name
-     @param Data section data as raw byte array.
-     @return true - if section data successful added.
+     @return size in byte of section table
     }
     function GetSectionTableSize(): SizeInt;
     {
-     Flushes dirty section on disk image. Free file descriptor after it.
+     Retrives offset for section data in executable file.
+     @return offset in bytes for section data
     }
-    procedure Close();
+    function GetRawDataOffset(): SizeInt;
+    function GetSectionTableHeadersSize(): SizeInt;
   end;
 
-  { TAdditionalSectionManipulatorFactory }
+  { TAdditionalSectionManagerFactory }
 
-  TAdditionalSectionManipulatorFactory = class(TObject)
+  TAdditionalSectionManagerFactory = class(TObject)
     {
      @param ExeFilePath
-    }    class function CreateAdditionalSectionManipulator(ExeFilePath: string):
-      IAdditionalSectionManipulator; static;
+    }    class function CreateAdditionalSectionManager(ExeFilePath: string):
+      IAdditionalSectionManager; static;
   end;
 
 const
   {ADDITional SeCtion Table(ord(T)-65=20 mod 16->4}
   ADDITION_SECTION_TABLE_MARKER: DWORD = $ADD145C4;
   {compressed section size  = 32KB}
-  MAX_SECTION_TABLE_COMPRESSED_SIZE: SizeInt = 32 * 1024;
+  MAX_SECTION_TABLE_COMPRESSED_SIZE: SizeInt = SizeOf(TByteArray);
 
 type
   {Raised when section table not found or corrupted.}
@@ -120,30 +123,35 @@ type
   {Section can be saved custom data, such as json,xml,binary..}
   TAdditionalSection = class(TCollectionItem)
   strict private
+    FModified: boolean;
     FCompressedDataSize: SizeInt;
     FDataSize: SizeInt;
     FCompressedDataOffset: SizeInt;
     FName: string;
     FHash: string;
     FHashAlg: string;
-    FData: TBytes;
-    FModified: boolean;
+    FData: TBytesStream;
   private
     property Modified: boolean read FModified;
-    constructor Create(AName: string; AData: TBytes; AHash: IHash);
-    procedure Fetch(AStream: TMemoryStream; ABasicOffset: SizeInt);
+    procedure Fetch(AStream: TStream);
+    procedure MarkDirty();
+    procedure MarkFlushed();
+    function Flush(CurrentSectionDataOffset: SizeInt): SizeInt;
+    class procedure CreateFor(ANewSection: TAdditionalSection;
+      AName: string; AData: TBytesStream); static;
   public
     {compressed data}
-    property Data: TBytes read FData write FData;
+    property Data: TBytesStream read FData write FData;
+    destructor Destroy; override;
   published
     {actual raw data size}
     property DataSize: SizeInt read FDataSize write FDataSize;
     {section binary file data size}
-    property ComressedDataSize: SizeInt read FCompressedDataSize
+    property CompressedDataSize: SizeInt read FCompressedDataSize
       write FCompressedDataSize;
     {actual data offset}
-    property CompressedDataOffset: SizeInt
-      read FCompressedDataOffset write FCompressedDataOffset;
+    property CompressedDataOffset: SizeInt read FCompressedDataOffset
+      write FCompressedDataOffset;
     {section name}
     property Name: string read FName write FName;
     {section compressed data hash}
@@ -169,48 +177,55 @@ type
     function GetItem(Index: integer): TAdditionalSection;
   public
     constructor Create;
-    function CreateFrom(Name: string; Data: TBytes; Hash: IHash): TAdditionalSection;
+    function CreateFrom(Name: string; Data: TBytesStream): TAdditionalSection;
     property Items[Index: integer]: TAdditionalSection read GetItem write SetItem;
     function GetEnumerator: TAdditionalSectionCollectionEnumerator;
+    class function CreateSectionCollection: TCollection; static;
   end;
 
   { TAdditionalSectionTable }
 
-  TAdditionalSectionTable = class
+  TAdditionalSectionTable = class(TPersistent)
   strict private
     FAdditionalSectionCollection: TAdditionalSectionCollection;
     FAdditionalSectionCollectionData: string;
     FHash: string;
     FHashAlg: string;
-    procedure CheckTable();
   private
     property AdditionalSectionCollection: TAdditionalSectionCollection
       read FAdditionalSectionCollection write FAdditionalSectionCollection;
-    function Flush(TableSize: SizeInt; out Count: SizeInt): TBytes;
-    procedure Fetch(AStream: TMemoryStream; ABasicOffset: SizeInt);
+    procedure Fetch(AStream: TStream);
+    function Flush(TableSize: SizeInt; out Count: SizeInt): TBytesStream;
   public
     destructor Destroy; override;
+    procedure InitNewTable();
   published
     property Hash: string read FHash write FHash;
     property HashAlg: string read FHashAlg write FHashAlg;
     property AdditionalSectionCollectionData: string
       read FAdditionalSectionCollectionData write FAdditionalSectionCollectionData;
-
   end;
 
-  { TAdditionalSectionManipulator }
+  { TAdditionalSectionManager }
 
-  TAdditionalSectionManipulator = class(TInterfacedObject,
-    IAdditionalSectionManipulator)
+  TAdditionalSectionManager = class(TAutoCloseable,
+    IAdditionalSectionManager)
   strict private
-    FAdditionalSectionTable: TAdditionalSectionTable;
     FInitialized: boolean;
     FModified: boolean;
+    FBaseSectionTableOffset: SizeInt;
+    FRawDataSectionTableOffset: SizeInt;
+    FBaseRawDataOffset: SizeInt;
+    FAdditionalSectionTable: TAdditionalSectionTable;
     FExeFileStream: TFileStream;
     FPseFile: TPseFile;
-    FBaseSectionTableOffset: SizeInt;
-    FBaseRawDataOffset: SizeInt;
-    function GetSectionByName(Name: string): TAdditionalSection;
+    procedure Fetch();
+    procedure CheckFileFormat();
+    procedure Flush();
+    procedure PrepareSectionTableForFlushing();
+    procedure WriteSectionTableToStream(TempExeStream: TMemoryStream);
+    procedure WriteSectionDatasToStream(TempExeStream: TStream);
+    procedure WriteNewTableOnFileImage(TempExeStream: TStream);
     function CheckExecutableFile(): boolean;
     {$IF Defined(WIN64) or Defined(WIN32)}
     function CheckExecutableFileWin32x64():boolean;
@@ -224,22 +239,32 @@ type
     {$IFDEF UNIX}
     function CheckExecutableFileUnix():boolean;
     {$ENDIF}
-    procedure CheckFileFormat();
+    function GetSectionByName(Name: string): TAdditionalSection;
     function CheckSectionTableAvailable(): boolean;
-    procedure Fetch();
-    procedure Flush();
-    function ReadSectionTableData(): TBytes;
+    function ReadSectionTableData(): TBytesStream;
   public
     constructor Create(ExeFilePath: string);
-    destructor Destroy; override;
+    procedure DestroyResources; override;
+    procedure Close(); override;
     function GetSectionNames(): TStringList;
     function ExistsSectionByName(Name: string): boolean;
     function WriteDataSection(Name: string; Data: string): boolean; overload;
     function WriteDataSection(Name: string; Data: TBytes): boolean; overload;
     function ReadSectionDataByName(Name: string): string;
-    function ReadSectionDataAsBytesByName(Name: string): TBytes;
+    function ReadSectionDataAsBytesByName(Name: string): TBytesStream;
     function GetSectionTableSize(): SizeInt;
-    procedure Close();
+    function GetSectionTableHeadersSize(): SizeInt;
+    function GetRawDataOffset(): SizeInt;
+  end;
+
+  { THashVerifier }
+
+  { THashDataManager }
+
+  THashDataManager = class
+    class procedure VerifyHash(Data: TStream; HashAlg: string; ExceptedHash: string); static;
+    class procedure EvaluateHash(Data: TStream; out HashAlg: string;
+      out EvaluatedHash: string); static;
   end;
 
 var
@@ -249,31 +274,73 @@ var
   SupportedMapper: IDataMapper = nil;
 
 { TAdditionalSection }
-constructor TAdditionalSection.Create(AName: string; AData: TBytes; AHash: IHash);
-var
-  HashValue: IHashResult;
-  HashAlgName: string;
-  HashValueString: string;
+
+destructor TAdditionalSection.Destroy;
 begin
-  FModified := True;
-  FName := AName;
-  FData := SupportedCompressor.CompressDataGzip(AData);
-  FDataSize := Length(AData);
-  FCompressedDataSize := Length(FData);
-  HashAlgName := AHash.GetName;
-  HashAlg := Copy(HashAlgName, 1, Length(HashAlgName));
-  HashValue := AHash.ComputeBytes(FData);
-  HashValueString := HashValue.ToString();
-  Hash := Copy(HashValueString, 1, Length(HashValueString));
-  HashValue := nil;
+  FModified := False;
+  FName := '';
+  FreeAndNil(FData);
+  FCompressedDataSize := 0;
+  FCompressedDataOffset := 0;
+  FDataSize := 0;
+  FHashAlg := '';
+  FHash := '';
+  inherited Destroy;
 end;
 
-procedure TAdditionalSection.Fetch(AStream: TMemoryStream; ABasicOffset: SizeInt);
+procedure TAdditionalSection.Fetch(AStream: TStream);
 begin
-  FData:=;
+  if FCompressedDataSize <= 0 then
+    raise ESectionReadError.CreateFmt('Can''t read section data. Wrong data size: %d',
+      [FCompressedDataSize]);
+  FData := TBytesStream.Create();
+  AStream.Position := FCompressedDataOffset;
+  if FData.CopyFrom(AStream, FCompressedDataSize) <> FCompressedDataSize then
+    raise ESectionReadError.Create('Can''t read section data. Section data corrupted!');
+  THashDataManager.VerifyHash(FData, FHashAlg, FHash);
+  writeln(format('Section data with name ''%s'' successful fetched from executable image',
+    [FName]));
+end;
+
+procedure TAdditionalSection.MarkDirty();
+begin
+  FModified := True;
+end;
+
+procedure TAdditionalSection.MarkFlushed;
+begin
+  FModified := False;
+end;
+
+function TAdditionalSection.Flush(CurrentSectionDataOffset: SizeInt): SizeInt;
+begin
+  FCompressedDataOffset := CurrentSectionDataOffset;
+  Result := FCompressedDataOffset + FCompressedDataSize;
+end;
+
+class procedure TAdditionalSection.CreateFor(ANewSection: TAdditionalSection;
+  AName: string; AData: TBytesStream);
+var
+  AHash, AHashAlg: string;
+begin
+  writeln(format('New section with name ''%s'' filling started', [AName]));
+  ANewSection.Name := AName;
+  ANewSection.Data := SupportedCompressor.CompressDataZip(AData);
+  ANewSection.DataSize := AData.Size;
+  ANewSection.CompressedDataSize := ANewSection.Data.Size;
+  THashDataManager.EvaluateHash(ANewSection.Data, AHashAlg, AHash);
+  ANewSection.HashAlg := AHashAlg;
+  ANewSection.Hash := AHash;
+  ANewSection.MarkDirty();
+  writeln(format('New section with name ''%s'' filling successful finished', [AName]));
 end;
 
 { TAdditionalSectionCollectionEnumerator }
+constructor TAdditionalSectionCollection.Create;
+begin
+  inherited Create(TAdditionalSection);
+end;
+
 function TAdditionalSectionCollectionEnumerator.GetCurrent: TAdditionalSection;
 begin
   Result := inherited GetCurrent as TAdditionalSection;
@@ -291,60 +358,105 @@ begin
   Result := inherited GetItem(Index) as TAdditionalSection;
 end;
 
-constructor TAdditionalSectionCollection.Create;
-begin
-  inherited Create(TAdditionalSection);
-end;
-
 function TAdditionalSectionCollection.CreateFrom(Name: string;
-  Data: TBytes; Hash: IHash): TAdditionalSection;
+  Data: TBytesStream): TAdditionalSection;
 begin
-  Result := TAdditionalSection.Create(Name, Data, Hash);
+  Result := Add as TAdditionalSection;
+  TAdditionalSection.CreateFor(Result, Name, Data);
 end;
 
 function TAdditionalSectionCollection.GetEnumerator:
 TAdditionalSectionCollectionEnumerator;
 begin
-  Result := inherited GetEnumerator as TAdditionalSectionCollectionEnumerator;
+  Result := TAdditionalSectionCollectionEnumerator.Create(Self);
+end;
+
+class function TAdditionalSectionCollection.CreateSectionCollection: TCollection;
+begin
+  Result := TAdditionalSectionCollection.Create;
 end;
 
 { TAdditionalSectionTable }
-procedure TAdditionalSectionTable.Fetch(AStream: TMemoryStream; ABasicOffset: SizeInt);
-var
-  EvaluatedHash: string;
-  AdditionalSection: TAdditionalSection;
-begin
-  CheckTable();
-  FAdditionalSectionCollection :=
-    SupportedMapper.DeSerializeFrom(FAdditionalSectionCollectionData,
-    TAdditionalSectionCollection) as TAdditionalSectionCollection;
-  for AdditionalSection in FAdditionalSectionCollection do
-  begin
-    AdditionalSection.Fetch(AStream,ABasicOffset);
-  end;
-end;
-
-procedure TAdditionalSectionTable.CheckTable();
-begin
-  if (FHashAlg <> SupportedHash.GetName) then
-    raise ESectionTableReadError.CreateFmt('Unsupported hash algorithm ''%s''',
-      [FHashAlg]);
-  EvaluatedHash := SupportedHash.ComputeString(
-    FAdditionalSectionCollectionData, SupportedEncoding).ToString();
-  if FHash <> EvaluatedHash then
-    raise ESectionTableReadError.CreateFmt('Wrong hash value ''%s''', [FHash]);
-end;
-
 destructor TAdditionalSectionTable.Destroy;
 begin
   FreeAndNil(FAdditionalSectionCollection);
+  FHash := '';
+  FHashAlg := '';
+  FAdditionalSectionCollectionData := '';
   inherited Destroy;
 end;
 
-{ TAdditionalSectionManiputlator }
-constructor TAdditionalSectionManipulator.Create(ExeFilePath: string);
+procedure TAdditionalSectionTable.Fetch(AStream: TStream);
+var
+  AdditionalSection: TAdditionalSection;
+  DataStream: TStringStream;
 begin
-  FAdditionalSectionTable := TAdditionalSectionTable.Create;
+  writeln('Section table fetching started');
+  DataStream := TStringStream.Create(FAdditionalSectionCollectionData);
+  try
+    THashDataManager.VerifyHash(DataStream, FHashAlg, FHash);
+  finally
+    FreeAndNil(DataStream);
+  end;
+  writeln('Section hash and hash algorithm applied!');
+  FAdditionalSectionCollection :=
+    SupportedMapper.DeSerializeFrom(FAdditionalSectionCollectionData,
+    TAdditionalSectionCollection, TCreateObjectFunction(
+    @TAdditionalSectionCollection.CreateSectionCollection)) as
+    TAdditionalSectionCollection;
+  for AdditionalSection in FAdditionalSectionCollection do
+  begin
+    AdditionalSection.Fetch(AStream);
+  end;
+  writeln('Section table fetching successful finished');
+end;
+
+function TAdditionalSectionTable.Flush(TableSize: SizeInt;
+  out Count: SizeInt): TBytesStream;
+var
+  TableData: string;
+  Stream: TStringStream;
+  TableDataStream: TStream;
+begin
+  writeln('Section table flushing started');
+  if (TableSize < 0) then
+    raise ESectionTableWriteError.CreateFmt('Wrong table size %d', [TableSize]);
+  FAdditionalSectionCollectionData :=
+    SupportedMapper.SerializeTo(FAdditionalSectionCollection,
+    TAdditionalSectionCollection);
+  Stream := TStringStream.Create(FAdditionalSectionCollectionData);
+  try
+    THashDataManager.EvaluateHash(Stream, FHashAlg, FHash);
+  finally
+    FreeAndNil(Stream);
+  end;
+  TableData := SupportedMapper.SerializeTo(Self, TAdditionalSectionTable);
+  TableDataStream := TBytesStream.Create(SupportedEncoding.GetBytes(TableData));
+  try
+    Result := SupportedCompressor.CompressDataZip(TableDataStream);
+  finally
+    FreeAndNil(TableDataStream);
+  end;
+  Count := Result.Size;
+  if Count > TableSize then
+    raise ESectionTableWriteError.CreateFmt(
+      'Compressed table size is too big! Size %d bytes', [Count]);
+  Result.Size := TableSize;
+  writeln('Section table flushing successful finished');
+end;
+
+procedure TAdditionalSectionTable.InitNewTable();
+begin
+  if FAdditionalSectionCollection <> nil then
+    raise ESectionTableReadError.Create(
+      'Section table already initialized, but call method "InitNewTable". It is error!');
+  FAdditionalSectionCollection := TAdditionalSectionCollection.Create;
+  writeln('New section table initalized.');
+end;
+
+{ TAdditionalSectionManager }
+constructor TAdditionalSectionManager.Create(ExeFilePath: string);
+begin
   if (Trim(ExeFilePath) = '') then
   begin
     raise ESectionTableReadError.Create('Filename not specified');
@@ -358,85 +470,169 @@ begin
   FPseFile := TPseFile.GetInstance(FExeFileStream, False);
   CheckFileFormat();
   FBaseSectionTableOffset := FPseFile.GetSizeOfFileImage();
-  FBaseRawDataOffset := FBaseSectionTableOffset + GetSectionTableSize();
+  FRawDataSectionTableOffset := FBaseSectionTableOffset + GetSectionTableHeadersSize();
+  FBaseRawDataOffset := FBaseSectionTableOffset + GetRawDataOffset();
   Fetch();
   FInitialized := True;
   FModified := False;
+  writeln('Section manager initialized!');
 end;
 
-destructor TAdditionalSectionManipulator.Destroy;
+procedure TAdditionalSectionManager.DestroyResources;
+begin
+  FreeAndNil(FPseFile);
+  FreeAndNil(FExeFileStream);
+  FreeAndNil(FAdditionalSectionTable);
+  inherited DestroyResources;
+  writeln('Section manager all resources freed!');
+end;
+
+procedure TAdditionalSectionManager.Close();
+begin
+  Flush();
+  FInitialized := False;
+  FModified := False;
+  writeln('Section manager closed!');
+end;
+
+procedure TAdditionalSectionManager.Fetch();
+var
+  RawDataStream: TBytesStream;
 begin
   if FInitialized then
-    Close();
-  FreeAndNil(FAdditionalSectionTable);
-  inherited Destroy;
-end;
-
-function TAdditionalSectionManipulator.GetSectionNames(): TStringList;
-var
-  ReadCollectionItem: TCollectionItem;
-begin
-  Result := TStringList.Create;
-  for ReadCollectionItem in FAdditionalSectionTable.AdditionalSectionCollection do
+    raise ESectionTableReadError.Create('Section table already initialized!');
+  FExeFileStream.Seek(FBaseSectionTableOffset, TSeekOrigin.soBeginning);
+  if not CheckSectionTableAvailable() then
   begin
-    Result.Add((ReadCollectionItem as TAdditionalSection).Name);
+    FAdditionalSectionTable := TAdditionalSectionTable.Create;
+    FAdditionalSectionTable.InitNewTable();
+    exit;
+  end;
+  RawDataStream := ReadSectionTableData();
+  try
+    FAdditionalSectionTable :=
+      SupportedMapper.DeSerializeFrom(RawDataStream, TEncoding.UTF8,
+      TAdditionalSectionTable) as TAdditionalSectionTable;
+    FAdditionalSectionTable.Fetch(FExeFileStream);
+  finally
+    FreeAndNil(RawDataStream);
   end;
 end;
 
-function TAdditionalSectionManipulator.ExistsSectionByName(Name: string): boolean;
+procedure TAdditionalSectionManager.CheckFileFormat();
+begin
+  writeln('Validation executable image format started');
+  if not CheckExecutableFile() then
+  begin
+    raise ESectionTableReadError.CreateFmt(
+      'Section table can''t be read because executable file is not valid for ''%s'' type.'
+      + 'May be he has debug info and can''t be released. Please check and try again.',
+      [FPseFile.GetFriendlyName]);
+  end;
+  writeln('Executable image format for this os and architecture is valid!');
+end;
+
+procedure TAdditionalSectionManager.Flush();
 var
-  Names: TStringList;
+  TempExeStream: TMemoryStream;
 begin
-  Names := GetSectionNames();
-  Result := Names.IndexOf(Name) > -1;
-  FreeAndNil(Names);
-end;
-
-function TAdditionalSectionManipulator.WriteDataSection(Name: string;
-  Data: string): boolean;
-begin
-  Result := WriteDataSection(Name, TEncoding.UTF8.GetBytes(Data));
-end;
-
-function TAdditionalSectionManipulator.WriteDataSection(Name: string;
-  Data: TBytes): boolean;
-begin
-  Result := False;
+  WriteLn('Section table and section data flushing to file image started!');
+  if not FModified then
+    exit;
   if not FInitialized then
-    raise ESectionWriteError.CreateFmt(
-      'Section ''%s'' can''t be written, because section manipulator is closed or not initialized',
-      [Name]);
-  if ExistsSectionByName(Name) then
-    raise ESectionWriteError.CreateFmt(
-      'Section ''%s'' can''t be overwrite exists data', [Name]);
-  Result := FAdditionalSectionTable.AdditionalSectionCollection.CreateFrom(
-    Name, Data, SupportedHash) <> nil;
+    raise ESectionTableWriteError.Create(
+      'Can''t write before initialization or after finalization section table!');
+  writeln('Backup executable file into memory started');
+  TempExeStream := TMemoryStream.Create;
+  FExeFileStream.Position := 0;
+  TempExeStream.CopyFrom(FExeFileStream, FExeFileStream.Size);
+  writeln(format('Backup executable file into memory completed, size %d bytes',
+    [TempExeStream.size]));
+  try
+    WriteSectionTableToStream(TempExeStream);
+    WriteSectionDatasToStream(TempExeStream);
+    WriteNewTableOnFileImage(TempExeStream);
+  finally
+    writeln('Temporary flushing stream freed!');
+    FreeAndNil(TempExeStream);
+  end;
+  FModified := False;
+  WriteLn('Section table and section data flushing to file image completed!');
 end;
 
-function TAdditionalSectionManipulator.GetSectionByName(Name: string):
-TAdditionalSection;
-
+procedure TAdditionalSectionManager.PrepareSectionTableForFlushing;
 var
-  AdditionalSectionCollectionItem: TAdditionalSection;
-  BasicAdditionalSectionCollectionItem: TCollectionItem;
+  CurrentSectionDataOffset: SizeInt;
+  AdditionalSection: TAdditionalSection;
 begin
-  Result := nil;
-  if (Trim(Name) = '') then
-    raise ESectionReadError.Create('Section name is empty!');
-  for BasicAdditionalSectionCollectionItem in
-    FAdditionalSectionTable.AdditionalSectionCollection do
+  CurrentSectionDataOffset := FBaseRawDataOffset;
+  for AdditionalSection in FAdditionalSectionTable.AdditionalSectionCollection do
   begin
-    AdditionalSectionCollectionItem :=
-      BasicAdditionalSectionCollectionItem as TAdditionalSection;
-    if AdditionalSectionCollectionItem.Name = Name then
-    begin
-      Result := AdditionalSectionCollectionItem;
-      exit;
-    end;
+    CurrentSectionDataOffset :=
+      CurrentSectionDataOffset + AdditionalSection.Flush(CurrentSectionDataOffset);
   end;
 end;
 
-function TAdditionalSectionManipulator.CheckExecutableFile(): boolean;
+procedure TAdditionalSectionManager.WriteSectionTableToStream(
+  TempExeStream: TMemoryStream);
+var
+  TableDataStream: TBytesStream;
+  MaximumTableSize: SizeInt;
+  ActualTableSize: SizeInt;
+  ActualSize: SizeInt;
+begin
+  PrepareSectionTableForFlushing;
+  MaximumTableSize := GetSectionTableSize();
+  TableDataStream := FAdditionalSectionTable.Flush(MaximumTableSize, ActualTableSize);
+  TempExeStream.Position := FBaseSectionTableOffset;
+  TempExeStream.WriteDWord(ADDITION_SECTION_TABLE_MARKER);
+  TempExeStream.WriteDWord(ActualTableSize);
+  try
+    TableDataStream.Position := 0;
+    TempExeStream.CopyFrom(TableDataStream, TableDataStream.Size);
+  finally
+    FreeAndNil(TableDataStream);
+  end;
+  ActualSize := TempExeStream.Size;
+  if ActualSize <> FBaseRawDataOffset then
+    raise ESectionWriteError.Create(
+      'Can''t write section data because raw data offset is wrong!May be section table corrupted!');
+end;
+
+procedure TAdditionalSectionManager.WriteSectionDatasToStream(TempExeStream: TStream);
+var
+  AdditionalSection: TAdditionalSection;
+  ActualSize: SizeInt;
+  WrittenBytesNumber: SizeInt;
+begin
+  TempExeStream.Position := FBaseRawDataOffset;
+  for AdditionalSection in FAdditionalSectionTable.AdditionalSectionCollection do
+  begin
+    ActualSize := TempExeStream.Size;
+    if ActualSize <> AdditionalSection.CompressedDataOffset then
+      raise ESectionWriteError.CreateFmt(
+        'Can''t write section ''%s'' data because raw data offset is wrong',
+        [AdditionalSection.Name]);
+    WrittenBytesNumber := TempExeStream.CopyFrom(AdditionalSection.Data,
+      AdditionalSection.CompressedDataSize);
+    writeln(format('must be written %d, actually written %d (in bytes)',
+      [AdditionalSection.CompressedDataSize, WrittenBytesNumber]));
+    if WrittenBytesNumber <> AdditionalSection.CompressedDataSize then
+      raise ESectionWriteError.CreateFmt(
+        'Can''t write section ''%s'' data because stream corrupted!',
+        [AdditionalSection.Name]);
+  end;
+end;
+
+procedure TAdditionalSectionManager.WriteNewTableOnFileImage(TempExeStream: TStream);
+begin
+  FExeFileStream.Size := 0;
+  FExeFileStream.Position := 0;
+  TempExeStream.Position := 0;
+  FExeFileStream.CopyFrom(TempExeStream, TempExeStream.Size);
+end;
+
+function TAdditionalSectionManager.CheckExecutableFile(): boolean;
 begin
   Result := True
   {$IF Defined(WIN64) or Defined(WIN32)}
@@ -455,7 +651,7 @@ begin
 end;
 
 {$IF Defined(WIN64) or Defined(WIN32)}
-function TAdditionalSectionManipulator.CheckExecutableFileWin32x64(): boolean;
+function TAdditionalSectionManager.CheckExecutableFileWin32x64(): boolean;
 begin
   Result:=((FPseFile as TPsePeFile).ImageHeader.Characteristics and IMAGE_FILE_EXECUTABLE_IMAGE<>0)
   and((FPseFile as TPsePeFile).ImageHeader.NumberOfSymbols=0)
@@ -482,30 +678,124 @@ begin
 end;
 {$ENDIF}
 
-procedure TAdditionalSectionManipulator.CheckFileFormat();
+function TAdditionalSectionManager.GetSectionByName(Name: string): TAdditionalSection;
+var
+  AdditionalSectionCollectionItem: TAdditionalSection;
+  BasicAdditionalSectionCollectionItem: TCollectionItem;
 begin
-  if not CheckExecutableFile() then
+  Result := nil;
+  if (Trim(Name) = '') then
+    raise ESectionReadError.Create('Section name is empty!');
+  for BasicAdditionalSectionCollectionItem in
+    FAdditionalSectionTable.AdditionalSectionCollection do
   begin
-    raise ESectionTableReadError.CreateFmt(
-      'Section table can''t be read because executable file is not valid for ''%s'' type.'
-      + 'May be he has debug info and can''t be released. Please check and try again.',
-      [FPseFile.GetFriendlyName]);
+    AdditionalSectionCollectionItem :=
+      BasicAdditionalSectionCollectionItem as TAdditionalSection;
+    if AdditionalSectionCollectionItem.Name = Name then
+    begin
+      Result := AdditionalSectionCollectionItem;
+      exit;
+    end;
   end;
 end;
 
-function TAdditionalSectionManipulator.CheckSectionTableAvailable(): boolean;
+function TAdditionalSectionManager.CheckSectionTableAvailable(): boolean;
 begin
   Result := (FExeFileStream.Position < FExeFileStream.Size) and
     (FExeFileStream.ReadDWord = ADDITION_SECTION_TABLE_MARKER);
 end;
 
-function TAdditionalSectionManipulator.ReadSectionDataByName(Name: string): string;
+function TAdditionalSectionManager.ReadSectionTableData(): TBytesStream;
+var
+  CompressedSectionTableSize: SizeInt;
+  ActualCompressedSectionTableSize: SizeInt;
+  Data: TBytesStream;
 begin
-  Result := TEncoding.UTF8.GetString(ReadSectionDataAsBytesByName(Name));
+  CompressedSectionTableSize := GetSectionTableSize();
+  ActualCompressedSectionTableSize := FExeFileStream.ReadDWord;
+  if (ActualCompressedSectionTableSize > CompressedSectionTableSize) then
+    raise ESectionTableReadError.CreateFmt(
+      'Section table actual size %d greather than excepted max section table size is %d',
+      [ActualCompressedSectionTableSize, CompressedSectionTableSize]);
+  Data := TBytesStream.Create();
+  try
+    FExeFileStream.Position := FRawDataSectionTableOffset;
+    Data.CopyFrom(FExeFileStream, ActualCompressedSectionTableSize);
+    Result := SupportedCompressor.DeCompressDataZip(Data);
+  finally
+    FreeAndNil(Data);
+  end;
 end;
 
-function TAdditionalSectionManipulator.ReadSectionDataAsBytesByName(
-  Name: string): TBytes;
+function TAdditionalSectionManager.GetSectionNames(): TStringList;
+var
+  ReadCollectionItem: TCollectionItem;
+begin
+  Result := TStringList.Create;
+  if (FAdditionalSectionTable.AdditionalSectionCollection = nil) then
+    exit;
+  for ReadCollectionItem in FAdditionalSectionTable.AdditionalSectionCollection do
+  begin
+    Result.Add((ReadCollectionItem as TAdditionalSection).Name);
+  end;
+end;
+
+function TAdditionalSectionManager.ExistsSectionByName(Name: string): boolean;
+var
+  Names: TStringList;
+begin
+  Names := GetSectionNames();
+  Result := Names.IndexOf(Name) > -1;
+  FreeAndNil(Names);
+end;
+
+function TAdditionalSectionManager.WriteDataSection(Name: string; Data: string): boolean;
+begin
+  Result := WriteDataSection(Name, TEncoding.UTF8.GetBytes(Data));
+end;
+
+function TAdditionalSectionManager.WriteDataSection(Name: string; Data: TBytes): boolean;
+var
+  Stream: TBytesStream;
+  NewSection: TAdditionalSection;
+begin
+  Result := False;
+  if not FInitialized then
+    raise ESectionWriteError.CreateFmt(
+      'Section ''%s'' can''t be written, because section manipulator is closed or not initialized',
+      [Name]);
+  if ExistsSectionByName(Name) then
+    raise ESectionWriteError.CreateFmt(
+      'Section ''%s'' can''t be overwrite exists data', [Name]);
+  Stream := TBytesStream.Create(Data);
+  try
+    try
+      NewSection := FAdditionalSectionTable.AdditionalSectionCollection.CreateFrom(Name,
+        Stream);
+      Result := NewSection <> nil;
+    except
+      FreeAndNil(NewSection);
+    end;
+  finally
+    FreeAndNil(Stream);
+  end;
+  FModified := Result;
+end;
+
+function TAdditionalSectionManager.ReadSectionDataByName(Name: string): string;
+var
+  ResultStream: TBytesStream;
+begin
+  ResultStream := ReadSectionDataAsBytesByName(Name);
+  try
+    Result := SupportedEncoding.GetString(ResultStream.Bytes);
+  finally
+    FreeAndNil(ResultStream);
+  end;
+end;
+
+function TAdditionalSectionManager.ReadSectionDataAsBytesByName(
+  Name: string): TBytesStream;
 var
   section: TAdditionalSection;
 begin
@@ -513,133 +803,67 @@ begin
   section := GetSectionByName(Name);
   if (section = nil) then
     raise ESectionReadError.CreateFmt('Section with name ''%s'' not found!', [Name]);
-  Result := SupportedCompressor.DeCompressDataGzip(section.Data);
+  Result := SupportedCompressor.DeCompressDataZip(section.Data);
 end;
 
-function TAdditionalSectionManipulator.GetSectionTableSize(): SizeInt;
+function TAdditionalSectionManager.GetSectionTableSize(): SizeInt;
 begin
   Result := MAX_SECTION_TABLE_COMPRESSED_SIZE;
 end;
 
-procedure TAdditionalSectionManipulator.Fetch();
+function TAdditionalSectionManager.GetSectionTableHeadersSize(): SizeInt;
+begin
+  Result := 2 * SizeOf(DWord);
+end;
+
+function TAdditionalSectionManager.GetRawDataOffset(): SizeInt;
+begin
+  Result := GetSectionTableSize() + GetSectionTableHeadersSize();
+end;
+
+{ TAdditionalSectionManagerFactory }
+
+class function TAdditionalSectionManagerFactory.CreateAdditionalSectionManager(
+  ExeFilePath: string): IAdditionalSectionManager;
+begin
+  Result := TAdditionalSectionManager.Create(ExeFilePath);
+end;
+
+{ THashDataManager }
+
+class procedure THashDataManager.VerifyHash(Data: TStream; HashAlg: string;
+  ExceptedHash: string);
 var
-  RawData: TBytes;
-  PreparedStream: TMemoryStream;
+  EvaluatedHash: string;
 begin
-  if FInitialized then
-    raise ESectionTableReadError.Create('Section table already initialized!');
-  FExeFileStream.Seek(FBaseSectionTableOffset, TSeekOrigin.soBeginning);
-  if not CheckSectionTableAvailable() then
-  begin
-    writeln('Section table not found!');
-    exit;
-  end;
-  RawData := ReadSectionTableData();
-  FAdditionalSectionTable := SupportedMapper.DeSerializeFrom(
-    RawData, TEncoding.UTF8, TAdditionalSectionTable) as TAdditionalSectionTable;
-  PreparedStream := PrepareSectionDataStream();
-  try
-    FAdditionalSectionTable.Fetch(PreparedStream,FBaseRawDataOffset);
-  finally
-    FreeAndNil(PreparedStream);
-  end;
+  writeln('Hash validation started');
+  Data.Position := 0;
+  if (HashAlg <> SupportedHash.GetName) then
+    raise ESectionTableReadError.CreateFmt('Unsupported hash algorithm ''%s''',
+      [HashAlg]);
+  EvaluatedHash := SupportedHash.ComputeStream(Data).ToString();
+  if ExceptedHash <> EvaluatedHash then
+    raise ESectionTableReadError.CreateFmt('Wrong hash value ''%s''', [EvaluatedHash]);
+  Data.Position := 0;
+  writeln(format('Hash ''%s'' is valid', [ExceptedHash]));
 end;
 
-function TAdditionalSectionManipulator.PrepareSectionDataStream(): TMemoryStream;
+class procedure THashDataManager.EvaluateHash(Data: TStream;
+  out HashAlg: string; out EvaluatedHash: string);
 var
-  TotalNumberOfBytes: SizeInt;
+  HashValue: IHashResult;
+  HashAlgName: string;
+  HashValueString: string;
 begin
-  Result := TMemoryStream.Create;
-  TotalNumberOfBytes := FExeFileStream.Size - FBaseRawDataOffset;
-  Result.SetSize(TotalNumberOfBytes);
-  FExeFileStream.Position := FBaseRawDataOffset;
-  if Result.CopyFrom(FExeFileStream, TotalNumberOfBytes) <> TotalNumberOfBytes then
-    raise ESectionTableReadError.CreateFmt('Stream corrupted. Total Size: %d',
-      [TotalNumberOfBytes]);
-end;
-
-function TAdditionalSectionManipulator.ReadSectionTableData(): TBytes;
-var
-  CompressedSectionTableSize: SizeInt;
-  ActualCompressedSectionTableSize: SizeInt;
-  Data: TBytes;
-begin
-  SetLength(Result, 0);
-  CompressedSectionTableSize := GetSectionTableSize();
-  ActualCompressedSectionTableSize := FExeFileStream.ReadDWord;
-  if (ActualCompressedSectionTableSize > CompressedSectionTableSize) then
-    raise ESectionTableReadError.CreateFmt(
-      'Section table actual size %d greather than excepted max section table size is %d',
-      [ActualCompressedSectionTableSize, CompressedSectionTableSize]);
-  SetLength(Data, ActualCompressedSectionTableSize);
-  if FExeFileStream.Read(Data, ActualCompressedSectionTableSize) <>
-    ActualCompressedSectionTableSize then
-    raise ESectionTableReadError.Create('Section table data corrupted!');
-  Result := SupportedCompressor.DeCompressDataGzip(Data);
-end;
-
-procedure TAdditionalSectionManipulator.Flush();
-var
-  TableData: TBytes;
-  MaximumTableSize: SizeInt;
-  ActualTableSize: SizeInt;
-  AdditionalSection: TAdditionalSection;
-begin
-  if not FInitialized then
-    raise ESectionTableWriteError.Create(
-      'Can''t write before initialization or after finalization section table!');
-  if not FModified then
-    exit;
-  MaximumTableSize := GetSectionTableSize();
-  //  FBaseSectionTableOffset:=;
-  for AdditionalSection in FAdditionalSectionTable.AdditionalSectionCollection do ;
-  TableData := FAdditionalSectionTable.Flush(MaximumTableSize, ActualTableSize);
-  FExeFileStream.Seek(FBaseSectionTableOffset, soBeginning);
-  FExeFileStream.WriteDWord(ADDITION_SECTION_TABLE_MARKER);
-  FExeFileStream.WriteDWord(ActualTableSize);
-  FExeFileStream.Write(TableData, MaximumTableSize);
-  //  FExeFileStream.
-end;
-
-function TAdditionalSectionTable.Flush(TableSize: SizeInt; out Count: SizeInt): TBytes;
-var
-  GzippedData: TBytes;
-  GzippedDataLength: SizeInt;
-  I: integer;
-begin
-  SetLength(Result, 0);
-  if (TableSize < 0) then
-    raise ESectionTableWriteError.CreateFmt('Wrong table size %d', [TableSize]);
-  SetLength(Result, TableSize);
-  FillByte(Result, TableSize, 0);
-  FAdditionalSectionCollectionData :=
-    SupportedMapper.SerializeTo(FAdditionalSectionCollection,
-    TAdditionalSectionCollection);
-  GzippedData := SupportedCompressor.CompressDataGzip(
-    SupportedEncoding.GetBytes(FAdditionalSectionCollectionData));
-  GzippedDataLength := Length(GzippedData);
-  if GzippedDataLength > TableSize then
-    raise ESectionTableWriteError.CreateFmt(
-      'Compressed table size is too big! Size %d bytes', [GzippedDataLength]);
-  for I := 0 to GzippedDataLength - 1 do
-    Result[i] := GzippedData[i];
-  Count := GzippedDataLength;
-end;
-
-procedure TAdditionalSectionManipulator.Close();
-begin
-  Flush();
-  FInitialized := False;
-  FreeAndNil(FPseFile);
-  FreeAndNil(FExeFileStream);
-end;
-
-{ TAdditionalSectionManipulatorFactory }
-
-class function TAdditionalSectionManipulatorFactory.CreateAdditionalSectionManipulator(
-  ExeFilePath: string): IAdditionalSectionManipulator;
-begin
-  Result := TAdditionalSectionManipulator.Create(ExeFilePath);
+  Data.Position := 0;
+  EvaluatedHash := '';
+  HashAlg := '';
+  HashAlgName := SupportedHash.GetName;
+  HashAlg := Copy(HashAlgName, 1, Length(HashAlgName));
+  HashValue := SupportedHash.ComputeStream(Data);
+  HashValueString := HashValue.ToString();
+  EvaluatedHash := Copy(HashValueString, 1, Length(HashValueString));
+  Data.Position := 0;
 end;
 
 initialization

@@ -21,7 +21,8 @@ interface
 
 uses
   MapFileBasedLogger.Appenders,
-  MapFileBasedLogger.BasicTypes;
+  MapFileBasedLogger.BasicTypes,
+  common.autocloseable;
 
 type
 
@@ -43,18 +44,21 @@ type
   IMapFileInfoManipulator = interface
 
     {Try to load map file info from MapFilePath.@br
-    After loading file located at MapFilePath will be deleted.
-    @param ExeFilePath executable file location.}
-    procedure LoadMapFile(ExeFilePath: string);
+    After loading file located at MapFilePath will be deleted.}
+    procedure LoadMapFile;
     {Write data new section with name 'Logger Data' into executable file after all section(in the end of file)
     Data will saved in gzip stream.
-    @param ExeFilePath file for info saving.
     @raises EWriteError if error occured while file data processing.}
-    procedure AppendSectionToExecutable(ExeFilePath: string);
-    function ReadSectionFromExecutable(ExeFilePath: string): boolean;
+    procedure AppendSectionToExecutable();
+    function ReadSectionFromExecutable(): boolean;
     function FindCallerInfoByAddress(CallerPointer: CodePointer): TCallableInfo;
   end;
+  { TMapFileInfoManipulatorFactory }
 
+  TMapFileInfoManipulatorFactory = class
+    class function CreateMapFileInfoManipulator(AExeFilePath: string;
+      AIsSectionCheck: boolean = False): IMapFileInfoManipulator;
+  end;
 type
    {Factory for Logger instance creating.
   @author Artem A. Bogomolov(artem.bogomolov.a@gmail.com)  }
@@ -75,12 +79,7 @@ type
       BaseLoggerLevel: TLogLevel = llInfo): IMapFileBasedLogger;
   end;
 
-  { TMapFileInfoManipulatorFactory }
 
-  TMapFileInfoManipulatorFactory = class
-    class function CreateMapFileInfoManipulator(ExeFilePath: string;
-      IsSectionCheck: boolean = False): IMapFileInfoManipulator;
-  end;
 
 resourcestring
   E_APPENDER_CALL_FAILED = 'don''t write to device appender called %s ';
@@ -121,10 +120,7 @@ type
     FMapFileInfo: TMapFileInfo;
     FInitialized: boolean;
     FSupportedMapper: IDataMapper;
-  private
-  const
-    MAP_FILE_EXTENSION = '.map';
-  private
+    FExeFileName: string;
     {@param ExeFilePath exe path.
     @returns JsonFilePath ::=ExeFilePath + MAP_FILE_EXTENSION}
     function GetMapFilePath(ExeFilePath: string): string;
@@ -136,42 +132,52 @@ type
     @param Strings array of lines map file data.
     @returns index of first line that contains '.data' string.}
     function GetDataSectionIndex(Strings: TStrings): integer;
-    function ReadLogSectionData(ExeFileName: string): string;
-    procedure WriteLogSectionData(ExeFileName: string; Data: string);
+    function ReadLogSectionData(): string;
+    class procedure TryWriteLogSectionDataProc(AAdditionalSectionManipulator:
+      IAutoCloseable; AMethodData: ITriedMethodData); static;
+    procedure WriteLogSectionData(Data: string);
+    class function TryReadLogSectionDataProc(AAdditionalSectionManipulator:
+      IAutoCloseable; AMethodData: ITriedMethodData): TStringList; static;
+    class function CreateSectionManipulatorFunction(AMethodData: ITriedMethodData):
+      IAutoCloseable; static;
+  strict private
+  const
+    MAP_FILE_EXTENSION = '.map';
+  private
+    property ExeFileName: string read FExeFileName;
   public
-    constructor Create;
+    constructor Create(AExeFileName: string);
     destructor Destroy; override;
   public
-    procedure AppendSectionToExecutable(ExeFilePath: string);
+    procedure AppendSectionToExecutable();
     function FindCallerInfoByAddress(CallerPointer: CodePointer): TCallableInfo;
-    procedure LoadMapFile(ExeFilePath: string);
-    function ReadSectionFromExecutable(ExeFilePath: string): boolean;
-
+    procedure LoadMapFile();
+    function ReadSectionFromExecutable(): boolean;
   end;
 
 function TMapFileInfoManipulator.GetMapFilePath(ExeFilePath: string): string;
 begin
-  Result := ExeFilePath+MAP_FILE_EXTENSION;
+  Result := ExeFilePath + MAP_FILE_EXTENSION;
 end;
 
-procedure TMapFileInfoManipulator.AppendSectionToExecutable(ExeFilePath: string);
+procedure TMapFileInfoManipulator.AppendSectionToExecutable();
 var
   MapInfoJsonData: string;
 begin
   if FInitialized then
     exit;
   MapInfoJsonData := FSupportedMapper.SerializeTo(FMapFileInfo, TMapFileInfo);
-  WriteLogSectionData(ExeFilePath, MapInfoJsonData);
+  WriteLogSectionData(MapInfoJsonData);
   FInitialized := True;
 end;
 
-function TMapFileInfoManipulator.FindCallerInfoByAddress(
-  CallerPointer: CodePointer): TCallableInfo;
+function TMapFileInfoManipulator.FindCallerInfoByAddress(CallerPointer:
+  CodePointer): TCallableInfo;
 begin
   Result := FMapFileInfo.FindCallerInfoByAddress(CallerPointer);
 end;
 
-procedure TMapFileInfoManipulator.LoadMapFile(ExeFilePath: string);
+procedure TMapFileInfoManipulator.LoadMapFile();
 var
   MapFileDataStringArray: TStringDynArray;
   i: integer;
@@ -179,7 +185,7 @@ var
 begin
   if FInitialized then
     exit;
-  MapFilePath := GetMapFilePath(ExeFilePath);
+  MapFilePath := GetMapFilePath(ExtractFileNameWithoutExt(FExeFileName));
   MapFileDataStringArray := LoadTrimmedMapFile(MapFilePath);
   for i := Low(MapFileDataStringArray) to High(MapFileDataStringArray) do
   begin
@@ -191,8 +197,7 @@ begin
   //DeleteFile(MapFilePath);
 end;
 
-function TMapFileInfoManipulator.LoadTrimmedMapFile(MapFilePath: string):
-TStringDynArray;
+function TMapFileInfoManipulator.LoadTrimmedMapFile(MapFilePath: string): TStringDynArray;
 var
   MapFileData: TStringList;
   MemoryMapIndex: integer;
@@ -204,8 +209,7 @@ begin
   MemoryMapIndex := MapFileData.IndexOf(MAP_FILE_MEMORY_MAP_MARKER);
   DataSectionIndex := GetDataSectionIndex(MapFileData);
   MapFileDataStrings := MapFileData.Slice(MemoryMapIndex + 1);
-  Result := MapFileDataStrings.ToStringArray(0, DataSectionIndex -
-    MemoryMapIndex - 2);
+  Result := MapFileDataStrings.ToStringArray(0, DataSectionIndex - MemoryMapIndex - 2);
   FreeAndNil(MapFileDataStrings);
   FreeAndNil(MapFileData);
 end;
@@ -225,9 +229,8 @@ begin
   end;
 end;
 
-function TMapFileInfoManipulator.ReadSectionFromExecutable(ExeFilePath: string): boolean;
+function TMapFileInfoManipulator.ReadSectionFromExecutable(): boolean;
 var
-
   MapInfoJsonData: string;
 begin
   Result := False;
@@ -236,60 +239,124 @@ begin
     Result := True;
     exit;
   end;
-  MapInfoJsonData := string(ReadLogSectionData(ExeFilePath));
+  MapInfoJsonData := string(ReadLogSectionData());
   if trim(MapInfoJsonData) = '' then
     exit;
-  FMapFileInfo := FSupportedMapper.DeSerializeFrom(MapInfoJsonData, TMapFileInfo) as
-    TMapFileInfo;
+  FMapFileInfo := FSupportedMapper.DeSerializeFrom(MapInfoJsonData,
+    TMapFileInfo, TCreateObjectFunction(@TMapFileInfo.CreateMapFileInfo)) as TMapFileInfo;
   FInitialized := True;
   Result := True;
 end;
 
-function TMapFileInfoManipulator.ReadLogSectionData(ExeFileName: string): string;
+class function TMapFileInfoManipulator.TryReadLogSectionDataProc(
+  AAdditionalSectionManipulator: IAutoCloseable;
+  AMethodData: ITriedMethodData): TStringList;
 var
-  AdditionalSectionManipulator: IAdditionalSectionManipulator;
+  ResultString: string;
 begin
-  AdditionalSectionManipulator :=
-    TAdditionalSectionManipulatorFactory.CreateAdditionalSectionManipulator(ExeFileName);
+  Result := nil;
+  ResultString := (AAdditionalSectionManipulator as
+    IAdditionalSectionManager).ReadSectionDataByName(LOG_DATA_SECTION_NAME);
+  Result := TStringList.Create;
+  Result.Add(ResultString);
+end;
+
+class function TMapFileInfoManipulator.CreateSectionManipulatorFunction(
+  AMethodData: ITriedMethodData): IAutoCloseable;
+begin
+  Result := nil;
+  if Length(AMethodData.GetreferenceArray().GetReferences()) <> 1 then
+    exit;
+  if AMethodData.GetreferenceArray().GetReferences()[0] is TDummyElement then
+    exit;
+  if not (AMethodData.GetreferenceArray().GetReferences()[0] is
+    TMapFileInfoManipulator) then
+    exit;
+  Result := TAdditionalSectionManagerFactory.CreateAdditionalSectionManager(
+    (AMethodData.GetreferenceArray().GetReferences()[0] as
+    TMapFileInfoManipulator).ExeFileName);
+end;
+
+function TMapFileInfoManipulator.ReadLogSectionData(): string;
+var
+  TriedResult: ITriedMethodResult;
+  CreationMethodParams: TObjectDynArray;
+begin
   Result := '';
-  try
-    try
-      Result := AdditionalSectionManipulator.ReadSectionDataByName(
-        LOG_DATA_SECTION_NAME);
-    except
-      on e: Exception do
-        writeln(format('Section not found, cause: %s.', [e.Message]));
-    end;
-  finally
-    AdditionalSectionManipulator := nil;
+  SetLength(CreationMethodParams, 1);
+  CreationMethodParams[0] := self;
+  TriedResult := TAutoCloseableExecutor.TryExecuteWithAutocloseable(
+    TAutoCloseableCreatorFunction(@CreateSectionManipulatorFunction),
+    TTriedFunction(@TryReadLogSectionDataProc), CreationMethodParams);
+  if TriedResult.HasException then
+  begin
+    writeln(format('Section ''%s'' not found, cause: %s.',
+      [LOG_DATA_SECTION_NAME, TriedResult.GetExceptionMessage]));
+    TriedResult.SuppressException;
+    TriedResult := nil;
+    exit;
+  end;
+  if TriedResult.HasResult then
+  begin
+    Result := (TriedResult.GetResult as TStringList)[0];
+    TriedResult := nil;
   end;
 end;
 
-procedure TMapFileInfoManipulator.WriteLogSectionData(ExeFileName: string;
-  Data: string);
+class procedure TMapFileInfoManipulator.TryWriteLogSectionDataProc(
+  AAdditionalSectionManipulator: IAutoCloseable; AMethodData: ITriedMethodData);
 var
-  AdditionalSectionManipulator: IAdditionalSectionManipulator;
+  Data: string;
 begin
-  AdditionalSectionManipulator :=
-    TAdditionalSectionManipulatorFactory.CreateAdditionalSectionManipulator(ExeFileName);
-  try
-    AdditionalSectionManipulator.WriteDataSection(LOG_DATA_SECTION_NAME, Data);
-  finally
-    AdditionalSectionManipulator := nil;
-  end;
-
+  if Length(AMethodData.GetreferenceArray().GetReferences()) <> 1 then
+    exit;
+  if AMethodData.GetreferenceArray().GetReferences()[0] is TDummyElement then
+    exit;
+  if not (AMethodData.GetreferenceArray().GetReferences()[0] is TStringList) then
+    exit;
+  Data := (AMethodData.GetreferenceArray().GetReferences()[0] as TStringList)[0];
+  (AAdditionalSectionManipulator as IAdditionalSectionManager).WriteDataSection(
+    LOG_DATA_SECTION_NAME, Data);
 end;
 
-constructor TMapFileInfoManipulator.Create;
+procedure TMapFileInfoManipulator.WriteLogSectionData(Data: string);
+var
+  TriedResult: ITriedMethodResult;
+  CreationMethodParams: TObjectDynArray;
+  WriterMethodParam: TObjectDynArray;
+begin
+  SetLength(CreationMethodParams, 1);
+  CreationMethodParams[0] := self;
+  SetLength(WriterMethodParam, 1);
+  WriterMethodParam[0] := TStringList.Create;
+  (WriterMethodParam[0] as TStringList).Add(Data);
+  TriedResult := TAutoCloseableExecutor.TryExecuteWithAutocloseable(
+    TAutoCloseableCreatorFunction(@CreateSectionManipulatorFunction),
+    TTriedProc(@TryWriteLogSectionDataProc), CreationMethodParams, WriterMethodParam);
+  FreeAndNil(WriterMethodParam[0]);
+  if TriedResult.HasException then
+  begin
+    writeln(format('Section ''%s'' can''t written, cause: %s.',
+      [LOG_DATA_SECTION_NAME, TriedResult.GetExceptionMessage]));
+    TriedResult.SuppressException;
+    TriedResult := nil;
+    exit;
+  end;
+  TriedResult := nil;
+end;
+
+constructor TMapFileInfoManipulator.Create(AExeFileName: string);
 begin
   FInitialized := False;
   FSupportedMapper := TDataMapperFactory.CreateDataMapper(mtJSON);
+  FExeFileName := AExeFileName;
 end;
 
 destructor TMapFileInfoManipulator.Destroy;
 begin
   FreeAndNil(FMapFileInfo);
-  FSupportedMapper:=nil;
+  FExeFileName := '';
+  FSupportedMapper := nil;
   FInitialized := False;
   inherited Destroy;
 end;
@@ -297,23 +364,23 @@ end;
 { TMapFileInfoManipulatorFactory }
 
 class function TMapFileInfoManipulatorFactory.CreateMapFileInfoManipulator(
-  ExeFilePath: string; IsSectionCheck: boolean): IMapFileInfoManipulator;
+  AExeFilePath: string; AIsSectionCheck: boolean): IMapFileInfoManipulator;
 var
   IsSectionExists: boolean;
 begin
-  Result := TMapFileInfoManipulator.Create;
+  Result := TMapFileInfoManipulator.Create(AExeFilePath);
   IsSectionExists := False;
   {Try to read data section from executable.}
-  IsSectionExists := Result.ReadSectionFromExecutable(ExeFilePath);
+  IsSectionExists := Result.ReadSectionFromExecutable();
 
-  if not IsSectionExists and IsSectionCheck then
+  if not IsSectionExists and AIsSectionCheck then
     raise EFCreateError.Create('Log section excepted but not found!');
   if IsSectionExists then
     exit;
   {The section is empty. Try to load info from map file.}
-  Result.LoadMapFile(ExtractFileNameWithoutExt(ExeFilePath));
+  Result.LoadMapFile();
   {Try to write data into executable. }
-  Result.AppendSectionToExecutable(ExeFilePath);
+  Result.AppendSectionToExecutable();
 end;
 
 { TMapFileBasedLoggerFactory }
@@ -367,6 +434,7 @@ begin
     if not (Appender.AppendMessageTo(LogLevel, CallerInfo, Msg)) then
       raise EWriteError.CreateFmt(E_APPENDER_CALL_FAILED,
         [TObject(Appender).QualifiedClassName]);
+
   end;
 end;
 

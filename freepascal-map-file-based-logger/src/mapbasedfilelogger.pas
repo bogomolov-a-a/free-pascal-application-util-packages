@@ -8,9 +8,14 @@ unit MapBasedFileLogger;
 interface
 
 uses
-  MapFileBasedLogger.Appenders, MapFileBasedLogger.BasicTypes, 
-  MapFileBasedLogger.Logger;
+  MapFileBasedLogger.Appenders, MapFileBasedLogger.BasicTypes, MapFileBasedLogger.Logger, LazarusPackageIntf;
 
 implementation
 
+procedure Register;
+begin
+end;
+
+initialization
+  RegisterPackage('MapBasedFileLogger', @Register);
 end.

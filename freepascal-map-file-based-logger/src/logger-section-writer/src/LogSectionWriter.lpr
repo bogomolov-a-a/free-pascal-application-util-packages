@@ -7,9 +7,9 @@ uses
   cthreads,
  {Widestring manager needed for widestring support}
   cwstring,
-          {$ENDIF} {$IFDEF WINDOWS}
+               {$ENDIF} {$IFDEF WINDOWS}
   Windows, {for setconsoleoutputcp}
-          {$ENDIF}
+               {$ENDIF}
 
   Classes,
   CustApp,
@@ -36,22 +36,21 @@ type
     manipulator: IMapFileInfoManipulator;
     logger: IMapFileBasedLogger;
   begin
+    manipulator := nil;
+    logger := nil;
+    ExeFilePath := '';
     CheckOptions('f', []);
     ExeFilePath := GetOptionValue('f');
-
     writeln(Format('try to process file at ''%s''', [ExeFilePath]));
-    manipulator := TMapFileInfoManipulatorFactory.CreateMapFileInfoManipulator(
-      ExeFilePath);
+    manipulator := TMapFileInfoManipulatorFactory.CreateMapFileInfoManipulator(ExeFilePath);
     if manipulator <> nil then
     begin
-      writeln(format('file at ''%s'' processed. Logger section written!',
-        [ExeFilePath]));
+      writeln(format('file at ''%s'' processed. Logger section written!', [ExeFilePath]));
       manipulator := nil;
     end;
     {check}
     try
-      manipulator := TMapFileInfoManipulatorFactory.CreateMapFileInfoManipulator(
-        ExeFilePath, True);
+      manipulator := TMapFileInfoManipulatorFactory.CreateMapFileInfoManipulator(ExeFilePath, True);
       logger := TMapFileBasedLoggerFactory.CreateLoggerFrom(manipulator);
     except
       on e: Exception do
@@ -70,6 +69,7 @@ type
   begin
     inherited Create(TheOwner);
     StopOnException := True;
+    ExceptionExitCode := -1;
   end;
 
 var

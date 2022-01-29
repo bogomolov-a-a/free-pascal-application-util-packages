@@ -2,22 +2,22 @@
 <CONFIG>
   <ProjectSession>
     <PathDelim Value="\"/>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <BuildModes Active="Debug"/>
-    <Units Count="17">
+    <Units Count="24">
       <Unit0>
         <Filename Value="LogSectionWriter.lpr"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="31"/>
-        <CursorPos Y="60"/>
+        <TopLine Value="49"/>
+        <CursorPos Y="65"/>
         <UsageCount Value="214"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="318"/>
-        <CursorPos Y="294"/>
+        <TopLine Value="267"/>
+        <CursorPos X="3" Y="282"/>
         <UsageCount Value="101"/>
         <Loaded Value="True"/>
       </Unit1>
@@ -25,283 +25,325 @@
         <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
         <UnitName Value="CustApp.AddSectionManiputlator"/>
         <IsVisibleTab Value="True"/>
-        <EditorIndex Value="3"/>
-        <TopLine Value="575"/>
-        <CursorPos X="27" Y="573"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="487"/>
+        <CursorPos X="62" Y="507"/>
         <UsageCount Value="106"/>
         <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\objpas\sysutils\sysutilh.inc"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="250"/>
-        <CursorPos X="18" Y="269"/>
-        <UsageCount Value="44"/>
+        <TopLine Value="82"/>
+        <CursorPos X="4" Y="99"/>
+        <UsageCount Value="38"/>
       </Unit3>
       <Unit4>
-        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\config_lazarus\onlinepackagemanager\packages\HashLib\src\Hash32\HlpMurmur2.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="22"/>
-        <CursorPos X="30" Y="27"/>
-        <UsageCount Value="42"/>
-      </Unit4>
-      <Unit5>
-        <Filename Value="..\..\..\..\..\components\pesp\src\main\PseFile.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="8"/>
-        <CursorPos X="27" Y="90"/>
-        <UsageCount Value="42"/>
-      </Unit5>
-      <Unit6>
         <Filename Value="..\..\mapfilebasedlogger.basictypes.pas"/>
         <UnitName Value="MapFileBasedLogger.BasicTypes"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="199"/>
-        <CursorPos Y="201"/>
-        <UsageCount Value="105"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="159"/>
+        <CursorPos X="3" Y="176"/>
+        <UsageCount Value="86"/>
+        <Loaded Value="True"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="..\..\..\..\freepascal-application-common\src\main\common.data.compressor.pas"/>
+        <UnitName Value="common.Data.compressor"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2"/>
+        <CursorPos X="29" Y="89"/>
+        <UsageCount Value="102"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\..\..\..\freepascal-application-common\src\main\common.data.mapper.pas"/>
+        <UnitName Value="common.Data.Mapper"/>
+        <EditorIndex Value="4"/>
+        <CursorPos X="48" Y="10"/>
+        <UsageCount Value="104"/>
         <Loaded Value="True"/>
       </Unit6>
       <Unit7>
-        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\config_lazarus\onlinepackagemanager\packages\HashLib\src\Base\HlpHashFactory.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="1069"/>
-        <CursorPos X="51" Y="1100"/>
-        <UsageCount Value="38"/>
+        <Filename Value="..\..\..\..\freepascal-application-common\src\main\common.autocloseable.pas"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="359"/>
+        <CursorPos X="23" Y="384"/>
+        <UsageCount Value="134"/>
+        <Loaded Value="True"/>
       </Unit7>
       <Unit8>
-        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\objpas\classes\classesh.inc"/>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\packages\fcl-base\src\custapp.pp"/>
+        <UnitName Value="CustApp"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="1003"/>
-        <CursorPos X="14" Y="1022"/>
-        <UsageCount Value="12"/>
+        <TopLine Value="304"/>
+        <CursorPos X="32" Y="317"/>
+        <UsageCount Value="97"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\..\..\..\freepascal-application-common\src\common.data.compressor.pas"/>
-        <UnitName Value="common.Data.compressor"/>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\objpas\classes\classesh.inc"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="30"/>
-        <CursorPos X="36" Y="73"/>
-        <UsageCount Value="23"/>
+        <TopLine Value="913"/>
+        <CursorPos X="3" Y="933"/>
+        <UsageCount Value="60"/>
       </Unit9>
       <Unit10>
-        <Filename Value="..\..\..\..\freepascal-application-common\src\common.data.mapper.pas"/>
-        <UnitName Value="common.Data.Mapper"/>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\packages\paszlib\src\zipper.pp"/>
+        <UnitName Value="Zipper"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="88"/>
-        <CursorPos Y="95"/>
-        <UsageCount Value="54"/>
+        <TopLine Value="1266"/>
+        <CursorPos X="103" Y="1272"/>
+        <UsageCount Value="7"/>
       </Unit10>
       <Unit11>
-        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\inc\objpash.inc"/>
-        <EditorIndex Value="-1"/>
-        <CursorPos X="61" Y="50"/>
-        <UsageCount Value="4"/>
-      </Unit11>
-      <Unit12>
-        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\inc\systemh.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="316"/>
-        <CursorPos X="3" Y="335"/>
-        <UsageCount Value="4"/>
-      </Unit12>
-      <Unit13>
-        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\inc\rttih.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="7"/>
-        <CursorPos X="11" Y="42"/>
-        <UsageCount Value="4"/>
-      </Unit13>
-      <Unit14>
         <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\objpas\classes\streams.inc"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="539"/>
-        <CursorPos X="3" Y="542"/>
-        <UsageCount Value="4"/>
+        <TopLine Value="199"/>
+        <CursorPos X="30" Y="226"/>
+        <UsageCount Value="41"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\..\..\..\..\components\HashLib4Pascal\HashLib\src\Interfaces\HlpIHash.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="23"/>
+        <CursorPos X="27" Y="49"/>
+        <UsageCount Value="19"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\packages\fcl-json\src\fpjsonrtti.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="15"/>
+        <CursorPos X="78" Y="23"/>
+        <UsageCount Value="26"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="..\..\..\..\..\components\laz-codecoverage-helper\source\CodeCoverage.SynGutter.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="90"/>
+        <CursorPos X="25" Y="98"/>
+        <UsageCount Value="2"/>
       </Unit14>
       <Unit15>
-        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\objpas\sysutils\filutilh.inc"/>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\inc\objpash.inc"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="203"/>
-        <CursorPos X="10" Y="222"/>
-        <UsageCount Value="4"/>
+        <TopLine Value="288"/>
+        <CursorPos X="22" Y="308"/>
+        <UsageCount Value="3"/>
       </Unit15>
       <Unit16>
-        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\win\sysutils.pp"/>
-        <UnitName Value="SysUtils"/>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\objpas\sysutils\sysutils.inc"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="380"/>
-        <CursorPos X="18" Y="407"/>
-        <UsageCount Value="4"/>
+        <TopLine Value="199"/>
+        <CursorPos X="10" Y="187"/>
+        <UsageCount Value="5"/>
       </Unit16>
+      <Unit17>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\rtl\objpas\sysutils\sysstr.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1130"/>
+        <CursorPos X="10" Y="1150"/>
+        <UsageCount Value="6"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\config_lazarus\onlinepackagemanager\packages\Abbrevia\source\AbZipper.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="103"/>
+        <CursorPos X="42" Y="92"/>
+        <UsageCount Value="7"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\config_lazarus\onlinepackagemanager\packages\Abbrevia\source\AbDfBase.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="253"/>
+        <CursorPos X="34" Y="34"/>
+        <UsageCount Value="7"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\config_lazarus\onlinepackagemanager\packages\Abbrevia\source\AbGzTyp.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1200"/>
+        <CursorPos X="46" Y="1109"/>
+        <UsageCount Value="7"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\config_lazarus\onlinepackagemanager\packages\Abbrevia\source\AbBzip2Typ.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="340"/>
+        <UsageCount Value="7"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\config_lazarus\onlinepackagemanager\packages\Abbrevia\source\AbTarTyp.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="396"/>
+        <CursorPos X="3" Y="416"/>
+        <UsageCount Value="7"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\config_lazarus\onlinepackagemanager\packages\Abbrevia\source\AbArcTyp.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="487"/>
+        <CursorPos X="3" Y="270"/>
+        <UsageCount Value="7"/>
+      </Unit23>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="184" Column="46" TopLine="156"/>
+        <Caret Line="337" Column="46" TopLine="321"/>
       </Position1>
       <Position2>
         <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="494" Column="5" TopLine="492"/>
+        <Caret Line="615" TopLine="595"/>
       </Position2>
       <Position3>
         <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
+        <Caret Line="613" Column="58" TopLine="594"/>
       </Position3>
       <Position4>
         <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="498" Column="23" TopLine="478"/>
+        <Caret Line="613" TopLine="594"/>
       </Position4>
       <Position5>
         <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="517" Column="13" TopLine="491"/>
+        <Caret Line="615" TopLine="594"/>
       </Position5>
       <Position6>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="444" Column="59" TopLine="433"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="239" TopLine="215"/>
       </Position6>
       <Position7>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="223" Column="14" TopLine="206"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="263" TopLine="233"/>
       </Position7>
       <Position8>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="408" Column="43" TopLine="403"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="248" TopLine="233"/>
       </Position8>
       <Position9>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="74" Column="33" TopLine="55"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="247" Column="13" TopLine="227"/>
       </Position9>
       <Position10>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="498" Column="17" TopLine="465"/>
+        <Filename Value="..\..\mapfilebasedlogger.basictypes.pas"/>
+        <Caret Line="188" Column="21" TopLine="168"/>
       </Position10>
       <Position11>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="530" Column="3" TopLine="500"/>
+        <Filename Value="..\..\mapfilebasedlogger.basictypes.pas"/>
+        <Caret Line="195" Column="60" TopLine="157"/>
       </Position11>
       <Position12>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="184" Column="49" TopLine="156"/>
+        <Filename Value="..\..\..\..\freepascal-application-common\src\main\common.data.mapper.pas"/>
+        <Caret Line="10" Column="24"/>
       </Position12>
       <Position13>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="184" Column="17" TopLine="156"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="247" Column="13" TopLine="224"/>
       </Position13>
       <Position14>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="525" TopLine="515"/>
+        <Filename Value="..\..\mapfilebasedlogger.basictypes.pas"/>
+        <Caret Line="195" Column="35" TopLine="174"/>
       </Position14>
       <Position15>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="527" Column="18" TopLine="521"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="247" Column="3" TopLine="227"/>
       </Position15>
       <Position16>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="496" Column="29" TopLine="477"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="248" TopLine="225"/>
       </Position16>
       <Position17>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="504" Column="73" TopLine="477"/>
+        <Filename Value="..\..\..\..\freepascal-application-common\src\main\common.data.mapper.pas"/>
+        <Caret Line="10" Column="48"/>
       </Position17>
       <Position18>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="496" Column="45" TopLine="477"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="247" TopLine="225"/>
       </Position18>
       <Position19>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="184" Column="14" TopLine="165"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="120" Column="5" TopLine="100"/>
       </Position19>
       <Position20>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="501" Column="78" TopLine="482"/>
+        <Filename Value="..\..\mapfilebasedlogger.basictypes.pas"/>
+        <Caret Line="176" Column="3" TopLine="159"/>
       </Position20>
       <Position21>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="184" Column="14" TopLine="165"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="248" TopLine="228"/>
       </Position21>
       <Position22>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="498" Column="22" TopLine="483"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="247" TopLine="216"/>
       </Position22>
       <Position23>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="494" Column="81" TopLine="474"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="135" Column="14" TopLine="115"/>
       </Position23>
       <Position24>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="506" Column="14" TopLine="502"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="317" Column="82" TopLine="267"/>
       </Position24>
       <Position25>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="537" Column="31" TopLine="518"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="139" Column="20" TopLine="121"/>
       </Position25>
       <Position26>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="185" Column="18" TopLine="168"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="302" Column="12" TopLine="267"/>
       </Position26>
       <Position27>
-        <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="245" TopLine="243"/>
+        <Filename Value="..\..\MapFileBasedLogger.Logger.pas"/>
+        <Caret Line="282" Column="3" TopLine="267"/>
       </Position27>
       <Position28>
         <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="451" Column="82" TopLine="436"/>
+        <Caret Line="475" Column="5" TopLine="441"/>
       </Position28>
       <Position29>
         <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="185" Column="15" TopLine="166"/>
+        <Caret Line="222" Column="15" TopLine="202"/>
       </Position29>
       <Position30>
         <Filename Value="..\..\..\..\freepascal-addition-section-manipulator\src\main\custapp.addsectionmaniputlator.pas"/>
-        <Caret Line="196" Column="32" TopLine="161"/>
+        <Caret Line="508" Column="28" TopLine="498"/>
       </Position30>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
-      <Modes Count="0" ActiveMode="Debug"/>
+      <Modes ActiveMode="Debug"/>
     </RunParams>
+    <HistoryLists Count="3">
+      <List0 Name="LaunchingApplication" Type="File" Count="1">
+        <Item1 Value="C:\WINDOWS\system32\cmd.exe /C ${TargetCmdLine}"/>
+      </List0>
+      <List1 Name="CommandLineParameters" Count="1">
+        <Item1 Value="-f &quot;c:\Users\artem.bogomolov.a\develop\projects\private\family-budget\family-budget-server\target\FamilyBudgetServerApplication.exe&quot;"/>
+      </List1>
+      <List2 Name="WorkingDirectory" Type="File" Count="1"/>
+    </HistoryLists>
   </ProjectSession>
   <Debugging>
-    <BreakPoints Count="5">
-      <Item1>
+    <BreakPoints>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
-        <Source Value="LogSectionWriter.lpr"/>
-        <Line Value="49"/>
-      </Item1>
-      <Item2>
+        <Source Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\packages\paszlib\src\zstream.pp"/>
+        <Line Value="245"/>
+      </Item>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
-        <Source Value="LogSectionWriter.lpr"/>
-        <Line Value="47"/>
-      </Item2>
-      <Item3>
+        <Source Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\packages\paszlib\src\zstream.pp"/>
+        <Line Value="247"/>
+      </Item>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
-        <Source Value="LogSectionWriter.lpr"/>
-        <Line Value="59"/>
-      </Item3>
-      <Item4>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="LogSectionWriter.lpr"/>
-        <Line Value="60"/>
-      </Item4>
-      <Item5>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="LogSectionWriter.lpr"/>
-        <Line Value="53"/>
-      </Item5>
+        <Source Value="..\..\..\..\..\..\..\..\instruments\ObjectPascal\fpcdeluxe\fpcsrc\packages\paszlib\src\zstream.pp"/>
+        <Line Value="248"/>
+      </Item>
     </BreakPoints>
-    <Watches Count="1">
-      <Item1>
-        <Expression Value="AdditionalSectionManipulator"/>
-      </Item1>
-    </Watches>
   </Debugging>
 </CONFIG>

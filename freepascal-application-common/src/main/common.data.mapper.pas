@@ -4,17 +4,23 @@ unit common.Data.Mapper;
 
 interface
 
-uses SysUtils;
+uses Classes, SysUtils;
 
 type
+  TCreateObjectFunction = function: TPersistent;
+
   IDataMapper = interface
-    function SerializeTo(DataObject: TObject; AClass: TClass): string;
-    function DeSerializeFrom(AData: string; AClass: TClass): TObject;
-    function DeSerializeFrom(AData: TBytes; AEncoding: TEncoding;
-      AClass: TClass): TObject;
+    function SerializeTo(DataObject: TPersistent; AClass: TPersistentClass): string;
+    function DeSerializeFrom(AData: string; AClass: TPersistentClass;
+      ACollectionCreateFunction: TCreateObjectFunction = nil): TPersistent;
+    function DeSerializeFrom(AData: TBytesStream; AEncoding: TEncoding;
+      AClass: TPersistentClass;
+      ACollectionCreateFunction: TCreateObjectFunction = nil): TPersistent;
     function DeSerializeFrom(AData: string; AEncoding: TEncoding;
-      AClass: TClass): TObject;
+      AClass: TPersistentClass;
+      ACollectionCreateFunction: TCreateObjectFunction = nil): TPersistent;
   end;
+
 
   MapperType = (mtJSON);
 
@@ -37,17 +43,22 @@ type
   strict  private
     FJsonStreamer: TJSONStreamer;
     FJsonDeStreamer: TJSONDeStreamer;
-    procedure CheckArguments(AData: string; AEncoding: TEncoding; AClass: TClass);
+    procedure CheckArguments(AData: string; AEncoding: TEncoding;
+      AClass: TPersistentClass);
   public
     constructor Create;
     destructor Destroy; override;
   public
-    function SerializeTo(DataObject: TObject; AClass: TClass): string;
-    function DeSerializeFrom(AData: string; AClass: TClass): TObject;
-    function DeSerializeFrom(AData: TBytes; AEncoding: TEncoding;
-      AClass: TClass): TObject;
+    function SerializeTo(DataObject: TPersistent; AClass: TPersistentClass): string;
+    function DeSerializeFrom(AData: string; AClass: TPersistentClass;
+      ACollectionCreateFunction: TCreateObjectFunction = nil): TPersistent;
+      overload;
+    function DeSerializeFrom(AData: TBytesStream; AEncoding: TEncoding;
+      AClass: TPersistentClass;
+      ACollectionCreateFunction: TCreateObjectFunction = nil): TPersistent; overload;
     function DeSerializeFrom(AData: string; AEncoding: TEncoding;
-      AClass: TClass): TObject;
+      AClass: TPersistentClass;
+      ACollectionCreateFunction: TCreateObjectFunction = nil): TPersistent; overload;
   end;
 
 { TDataMapperFactory }
@@ -64,7 +75,7 @@ end;
 { TJsonDataMapper }
 
 procedure TJsonDataMapper.CheckArguments(AData: string; AEncoding: TEncoding;
-  AClass: TClass);
+  AClass: TPersistentClass);
 begin
   if trim(AData) = '' then
     raise EArgumentException.Create('AData is empty!');
@@ -78,7 +89,7 @@ constructor TJsonDataMapper.Create;
 begin
   FJsonStreamer := TJSONStreamer.Create(nil);
   FJsonStreamer.Options := FJsonStreamer.Options +
-    [jsoLowerPropertyNames, jsoCheckEmptyDateTime, jsoDateTimeAsString];
+    [jsoCheckEmptyDateTime, jsoDateTimeAsString];
   FJsonDeStreamer := TJSONDeStreamer.Create(nil);
 end;
 
@@ -89,7 +100,8 @@ begin
   inherited Destroy;
 end;
 
-function TJsonDataMapper.SerializeTo(DataObject: TObject; AClass: TClass): string;
+function TJsonDataMapper.SerializeTo(DataObject: TPersistent;
+  AClass: TPersistentClass): string;
 begin
   Result := '';
   if not (DataObject is AClass) then
@@ -97,29 +109,39 @@ begin
   Result := FJsonStreamer.ObjectToJSONString(DataObject);
 end;
 
-function TJsonDataMapper.DeSerializeFrom(AData: string; AClass: TClass): TObject;
+function TJsonDataMapper.DeSerializeFrom(AData: string; AClass: TPersistentClass;
+  ACollectionCreateFunction: TCreateObjectFunction = nil): TPersistent;
 begin
   CheckArguments(AData, TEncoding.UTF8, AClass);
-  Result := DeSerializeFrom(TEncoding.UTF8.GetBytes(AData),TEncoding.UTF8, AClass);
+  if ACollectionCreateFunction <> nil then
+    Result := ACollectionCreateFunction()
+  else
+    Result := AClass.Create;
+  FJsonDeStreamer.JSONToObject(AData, Result);
 end;
 
-function TJsonDataMapper.DeSerializeFrom(AData: TBytes; AEncoding: TEncoding;
-  AClass: TClass): TObject;
+function TJsonDataMapper.DeSerializeFrom(AData: TBytesStream;
+  AEncoding: TEncoding; AClass: TPersistentClass;
+  ACollectionCreateFunction: TCreateObjectFunction = nil): TPersistent;
 begin
   if AData = nil then
     raise EArgumentNilException.Create('AData array can''t be nil.');
-  if Length(AData) = 0 then
+  if AData.size = 0 then
     raise EArgumentException.Create('AData is empty!');
-  CheckArguments('EMPTY STRING', TEncoding.UTF8, AClass);
-  Result := AClass.Create;
-  FJsonDeStreamer.JSONToObject(AEncoding.GetString(AData), Result);
+  if AEncoding = nil then
+    raise EArgumentException.Create('AEncoding is empty!');
+  CheckArguments('EMPTY STRING', AEncoding, AClass);
+  Result := DeSerializeFrom(TEncoding.UTF8.GetString(AData.Bytes),
+    AEncoding, AClass, ACollectionCreateFunction);
 end;
 
 function TJsonDataMapper.DeSerializeFrom(AData: string; AEncoding: TEncoding;
-  AClass: TClass): TObject;
+  AClass: TPersistentClass; ACollectionCreateFunction: TCreateObjectFunction =
+  nil): TPersistent;
 begin
   CheckArguments(AData, AEncoding, AClass);
-  Result := DeSerializeFrom(AEncoding.GetBytes(AData), AEncoding, AClass);
+  Result := DeSerializeFrom(TEncoding.UTF8.GetString(AEncoding.GetBytes(AData)),
+    AClass, ACollectionCreateFunction);
 end;
 
 end.

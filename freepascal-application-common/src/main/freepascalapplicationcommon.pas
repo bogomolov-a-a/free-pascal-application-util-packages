@@ -8,9 +8,14 @@ unit FreePascalApplicationCommon;
 interface
 
 uses
-  CustApp.test.selfcheckingapp, common.Data.compressor, common.Data.Mapper,
-  LazarusPackageIntf;
+  CustApp.test.selfcheckingapp, common.Data.compressor, common.Data.Mapper, common.autocloseable, LazarusPackageIntf;
 
 implementation
 
+procedure Register;
+begin
+end;
+
+initialization
+  RegisterPackage('FreePascalApplicationCommon', @Register);
 end.
