@@ -278,13 +278,13 @@ var
 destructor TAdditionalSection.Destroy;
 begin
   FModified := False;
-  FName := '';
+  FName := EmptyStr;
   FreeAndNil(FData);
   FCompressedDataSize := 0;
   FCompressedDataOffset := 0;
   FDataSize := 0;
-  FHashAlg := '';
-  FHash := '';
+  FHashAlg := EmptyStr;
+  FHash := EmptyStr;
   inherited Destroy;
 end;
 
@@ -380,9 +380,9 @@ end;
 destructor TAdditionalSectionTable.Destroy;
 begin
   FreeAndNil(FAdditionalSectionCollection);
-  FHash := '';
-  FHashAlg := '';
-  FAdditionalSectionCollectionData := '';
+  FHash := EmptyStr;
+  FHashAlg := EmptyStr;
+  FAdditionalSectionCollectionData := EmptyStr;
   inherited Destroy;
 end;
 
@@ -457,7 +457,7 @@ end;
 { TAdditionalSectionManager }
 constructor TAdditionalSectionManager.Create(ExeFilePath: string);
 begin
-  if (Trim(ExeFilePath) = '') then
+  if (Trim(ExeFilePath) = EmptyStr) then
   begin
     raise ESectionTableReadError.Create('Filename not specified');
   end;
@@ -467,7 +467,7 @@ begin
   except
     FExeFileStream := TFileStream.Create(ExeFilePath, fmOpenRead or fmShareExclusive);
   end;
-  FPseFile := TPseFile.GetInstance(FExeFileStream, False);
+  FPseFile := TPseFile.GetInstance(FExeFileStream, True);
   CheckFileFormat();
   FBaseSectionTableOffset := FPseFile.GetSizeOfFileImage();
   FRawDataSectionTableOffset := FBaseSectionTableOffset + GetSectionTableHeadersSize();
@@ -684,7 +684,7 @@ var
   BasicAdditionalSectionCollectionItem: TCollectionItem;
 begin
   Result := nil;
-  if (Trim(Name) = '') then
+  if (Trim(Name) = EmptyStr) then
     raise ESectionReadError.Create('Section name is empty!');
   for BasicAdditionalSectionCollectionItem in
     FAdditionalSectionTable.AdditionalSectionCollection do
@@ -856,8 +856,8 @@ var
   HashValueString: string;
 begin
   Data.Position := 0;
-  EvaluatedHash := '';
-  HashAlg := '';
+  EvaluatedHash := EmptyStr;
+  HashAlg := EmptyStr;
   HashAlgName := SupportedHash.GetName;
   HashAlg := Copy(HashAlgName, 1, Length(HashAlgName));
   HashValue := SupportedHash.ComputeStream(Data);

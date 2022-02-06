@@ -7,9 +7,9 @@ uses
   cthreads,
  {Widestring manager needed for widestring support}
   cwstring,
-               {$ENDIF} {$IFDEF WINDOWS}
+                    {$ENDIF} {$IFDEF WINDOWS}
   Windows, {for setconsoleoutputcp}
-               {$ENDIF}
+                    {$ENDIF}
 
   Classes,
   CustApp,
@@ -17,7 +17,11 @@ uses
   MapFileBasedLogger.Logger,
   SysUtils;
 
+const
+  FILE_NAME_OPTION = 'f';
+  METHOD_SIGNATURE_FILTER_OPTION = 'method-signature-filter';
 type
+
 
   { TLogDataSectionWriter }
 
@@ -33,24 +37,28 @@ type
   procedure TLogDataSectionWriter.DoRun;
   var
     ExeFilePath: string;
-    manipulator: IMapFileInfoManipulator;
+    MethodSignatureFilter: string;
+    manipulator: IMapFileInfoManager;
     logger: IMapFileBasedLogger;
   begin
     manipulator := nil;
     logger := nil;
-    ExeFilePath := '';
-    CheckOptions('f', []);
-    ExeFilePath := GetOptionValue('f');
+    ExeFilePath := EmptyStr;
+    CheckOptions(FILE_NAME_OPTION, [METHOD_SIGNATURE_FILTER_OPTION]);
+    ExeFilePath := GetOptionValue(FILE_NAME_OPTION);
+    MethodSignatureFilter := GetOptionValue(METHOD_SIGNATURE_FILTER_OPTION);
     writeln(Format('try to process file at ''%s''', [ExeFilePath]));
-    manipulator := TMapFileInfoManipulatorFactory.CreateMapFileInfoManipulator(ExeFilePath);
+    manipulator := TMapFileInfoManagerFactory.CreateMapFileInfoManager(
+      ExeFilePath, MethodSignatureFilter);
     if manipulator <> nil then
     begin
-      writeln(format('file at ''%s'' processed. Logger section written!', [ExeFilePath]));
+      writeln(format('file at ''%s'' processed. Logger section written!',
+        [ExeFilePath]));
       manipulator := nil;
     end;
     {check}
-    try
-      manipulator := TMapFileInfoManipulatorFactory.CreateMapFileInfoManipulator(ExeFilePath, True);
+    {try
+      manipulator := TMapFileInfoManagerFactory.CreateMapFileInfoManager(ExeFilePath, True);
       logger := TMapFileBasedLoggerFactory.CreateLoggerFrom(manipulator);
     except
       on e: Exception do
@@ -58,7 +66,7 @@ type
         writeln(e.Message);
         exitCode := -1;
       end;
-    end;
+    end;}
     logger := nil;
     manipulator := nil;
     // stop program loop

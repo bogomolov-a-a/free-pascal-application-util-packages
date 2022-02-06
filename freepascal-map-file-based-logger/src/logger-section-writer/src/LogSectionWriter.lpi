@@ -83,7 +83,7 @@
     <RunParams>
       <local>
         <HostApplicationFilename Value="C:\Users\artem.bogomolov.a\develop\projects\opensource\freepascal\free-pascal-application-util-packages\freepascal-map-file-based-logger\src\logger-section-writer\target\LogSectionWriter.exe"/>
-        <CommandLineParams Value="-f &quot;c:\Users\artem.bogomolov.a\develop\projects\private\family-budget\family-budget-server\target\FamilyBudgetServerApplication.exe&quot;"/>
+        <CommandLineParams Value="-f &quot;c:\Users\artem.bogomolov.a\develop\projects\private\family-budget\family-budget-server\target\FamilyBudgetServerApplication.exe&quot; --method-signature-filter=&quot;tfamilybudget&quot;"/>
       </local>
       <FormatVersion Value="2"/>
       <Modes Count="2">
@@ -96,7 +96,7 @@
         <Mode1 Name="Debug">
           <local>
             <HostApplicationFilename Value="C:\Users\artem.bogomolov.a\develop\projects\opensource\freepascal\free-pascal-application-util-packages\freepascal-map-file-based-logger\src\logger-section-writer\target\LogSectionWriter.exe"/>
-            <CommandLineParams Value="-f &quot;c:\Users\artem.bogomolov.a\develop\projects\private\family-budget\family-budget-server\target\FamilyBudgetServerApplication.exe&quot;"/>
+            <CommandLineParams Value="-f &quot;c:\Users\artem.bogomolov.a\develop\projects\private\family-budget\family-budget-server\target\FamilyBudgetServerApplication.exe&quot; --method-signature-filter=&quot;tfamilybudget&quot;"/>
           </local>
         </Mode1>
       </Modes>

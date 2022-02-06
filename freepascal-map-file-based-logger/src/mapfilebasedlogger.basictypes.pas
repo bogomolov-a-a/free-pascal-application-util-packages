@@ -10,6 +10,11 @@ uses
   SysUtils,
   Types;
 
+const
+  CODE_SECTION_START_MARKER = '.text';
+  CODE_ITEM_START_MARKER = CODE_SECTION_START_MARKER + '.';
+  CODE_ITEM_START_MARKER_LENGTH = Length(CODE_ITEM_START_MARKER);
+
 type
    {Message level for logger
   @author Artem A. Bogomolov(artem.bogomolov.a@gmail.com)  }
@@ -33,183 +38,23 @@ type
     llCustom,
     {turn off logging}
     llOff);
-  TCallableInfo = class;
-
-  { The finite state machine implemented following grammatic:
-     Map file structure contains one more sections(and linker log),
-   but we are currently interested only '.text' section.
-   It mapped to real address table for methods(and units, classes in runtime).@br
-   This section started with constant @link(MAP_FILE_MEMORY_MAP_MARKER).@br
-   BNF form for map file certain line for parsing:@br
-   @bold(<mapFileHeaderString> ::= [<applicationEntry><moduleNameSeparator>]<moduleName>
-   <moduleNameSeparator> [<classNameSeparator><className><classNameSeparator>]
-   [<methodDefintionSeparator><methodDefinitions>][<targetMethodSeparator><methodDefinition>]
-   [' '<startAddress>' '<length>' '<moduleObjectFile>],
-   where)
-   @orderedList(
-   @item(@bold(applicationEntry), application main module(with @italic(lpr module)).
-   Value must be only 'n_p')
-   @item(@bold(moduleNameSeparator), symbol @link(UNIT_NAME_TAIL_SEPARATOR))
-   @item(@bold(moduleName), unit that contains method(or class).Started with 'n_'
-   and must satisfy pattern 'n_[A-Za-z0-9_]*|n_main'. 'main' - program entry point
-   main 'begin...end' block. @link(UNIT_PROGRAM_IDENTIFIER))
-   @item(@bold(classNameSeparator), symbol @link(CLASS_NAME_SEPARATOR))
-   @item(@bold(className), class name that contains method(can be empty
-   if this method is owned unit). Must be satisfy pattern '[A-Za-z0-9_]*')
-   @item(@bold(methodDefinitionSeparator) for non target method(outer methods for any inner)
-   Value must be @link(METHOD_DEFINITION_SEPARATOR))
-   @item(@bold(<methodDefinitions>) ::= <methodDefintionSeparator>[<methodDefinitions>|<methodDefinition>],
-   method definition. Each module definition contain raw method name, list of parameters
-   and  return type if exists one of them.)
-   @item(@bold(<methodDefinition>) ::=<methodName>[<parameterTypeNameSeparator><parameterTypeName>]
-   [<returTypeSeparator><returnTypeName>])
-   @item(@bold(methodName), method name. Must be satisfy [A-Za-z0-9]* because
-   symbol '_' is methodDefinitionSeparator)
-   @item(@bold(parameterTypeNameSeparator), symbol @link(PARAMETER_TYPE_NAME_SEPARATOR))
-   @item(@bold(parameterTypeName), parameter type name. Must be satisfy pattern '[A-Za-z0-9]*')
-   @item(@bold(returTypeSeparator), symbol @link(RETURN_TYPE_NAME_SEPARATOR))
-   @item(@bold(returnTypeName), return value type name. Must be satisfy pattern '[A-Za-z0-9]*')
-   @item(@bold(targetMethodSeparator), symbol @link(TARGET_METHOD_DEFINITION_SEPARATOR))
-   @item(@bold(startAddress), start entry point(main) address, in bytes )
-   @item(@bold(length), length entry point(main) address, in bytes)
-   @item(@bold(moduleObjectFile), object file for module(e.g. 'moduleName.o'))
-   )
-   All names are in lower cases!@br
-   @bold(<addressInfoString> ::= <startAddress>' '<length>' '<moduleObjectFile>,where)
-   @orderedList(
-      @item(@bold(startAddress), start entry point(main) address, in bytes )
-   @item(@bold(length), length entry point(main) address, in bytes)
-   @item(@bold(moduleObjectFile), object file for module(e.g. 'moduleName.o'))
-   )
-    @author Artem A. Bogomolov(artem.bogomolov.a@gmail.com)
-  }
-
-  { TCallableInfoParser }
-
-  TCallableInfoParser = class
-  strict private
-    FCallableInfoList: TCollection;
-  private
-    {fill data for new item
-    @param MethodHeader <mapFileHeaderString>
-    @param AddressInfo <addressInfoString>
-    }
-    procedure FillCallableInfo(HeaderData: TStringArray;
-      AddressInfoData: TStringArray);
-    {Address presented in hex format leading 0x, remove this prefix.
-    @param Address in pattern 0x12344567890ABCDEF
-    @return address in pattern 12344567890ABCDEF
-    }
-    function RemoveXFromHexString(Address: string): string;
-    {
-    Can parsed <addressInfoString>.
-    @param Length string for parsing.
-    @returns @true if Length passed <addressInfoString> BNF,else - program entry point record.
-    }
-    function IsAvailableLength(Length: string): boolean;
-    {
-     Parse unitName from <mapFileHeaderString>. Remove unit name from FullMethodName.
-     @param FullMethodName <mapFileHeaderString>, in progress.
-     @return value for filling TCallableInfo.UnitName property.
-    }
-    function GetUnitName(var FullMethodName: string): string;
-    {
-     Parse className from <mapFileHeaderString>. Remove class name from FullMethodName.
-     @param FullMethodName <mapFileHeaderString>, in progress.
-     @return value for filling TCallableInfo.ClassName property.
-    }
-    function GetClassName(var FullMethodName: string): string;
-    {
-     Parse methodNames from <mapFileHeaderString>. Remove class name from FullMethodName.
-     @param FullMethodName <mapFileHeaderString>, in progress.
-     @return value for filling TCallableInfo.MethodNames property.
-    }
-    function GetMethodNamesList(var FullMethodName: string): TStringDynArray;
-    {
-     Extract part from FullMethodName bounded HeadDelimiter and TailDelimiter.
-     Remove <HeadDelimiter><partData><TailDelimiter> from FullMethodName
-     @param FullMethodName <HeadDelimiter><partData><TailDelimiter><otherMapFileHeaderString>,
-     in progress
-     @param HeadDelimiter leading separator for part
-     @param TailDelimiter tailing separator for part
-     @returns <partData> or '' if part empty.
-    }
-    function ExtractPartName(var FullMethodName: string;
-      const HeadDelimiter: string; const TailDelimiter: string): string;
-    {If PartName ends with METHOD_DEFINITION_SEPARATOR return it to FullMethodName and remove from PartName
-    @param PartName checking part name.
-    @param <mapFileHeaderString>, in progress}
-    procedure ReturnMethodSeparator(var PartName: string; var FullMethodName: string);
-    {Fill address info for regular methods, @bold(not entry point!).
-    @param CallableInfo filling callable info.
-    @param AddressInfoData <addressInfoString>.
-    }
-    procedure FillAddressInfoFromAddressData(CallableInfo: TCallableInfo;
-      AddressInfoData: TStringArray);
-    {Fill address info for @bold(application entry point!).
-    @param CallableInfo filling callable info.
-    @param AddressInfoData <addressInfoString>.
-    }
-    procedure FillAddressInfoFromHeaderData(CallableInfo: TCallableInfo;
-      HeaderData: TStringArray);
-    procedure CorrectUnitSepartor(var FullMethodName: string);
-  public
-    {Creates parser instance with specified CallableInfoList.
-    @param CallableInfoList TMapFileInfo.CallableInfoList
-    }
-    constructor Create(var CallableInfoList: TCollection);
-    {Add new item in callable collection
-    @param MethodHeader <mapFileHeaderString>
-    @param AddressInfo <addressInfoString>}
-    procedure ParseCallableInfoFromStrings(MethodHeader: string;
-      AddressInfo: string);
-  end;
-
-  {
-    Persistence Map file info containing parsed callable info.
-    Must be serialized into file and distributed with application.@br
-     @author Artem A. Bogomolov(artem.bogomolov.a@gmail.com)
-  }
-
-  { TMapFileInfo }
-
-  TMapFileInfo = class(TPersistent)
-  strict  private
-    FCallableInfoList: TCollection;
-  private
-    procedure ParsePreparedMapFileData(AMapFileData: TStringDynArray);
-    {Exclude from AMapFileData strings with (@link TRY_RES_STRING_MODULE_NAME) and (@link TRY_TC_MODULE_NAME)}
-    function FilterMapFileDataString(AMapFileData: TStringDynArray): TStringDynArray;
-  public
-    {Creates instance from AMapFileData lines.
-    @param AMapFileData lines from map file in '.text' section(only code).}
-    constructor Create(AMapFileData: TStringDynArray);
-    {For serialization}
-    constructor Create;
-    {For serialization, cleaning state.}
-    destructor Destroy; override;
-    {find callable info by CallerPointer
-    @param CallerInfo code pointer from stack frame
-    @returns @nil, if callable info for passed CallerPointer not found.}
-    function FindCallerInfoByAddress(CallerPointer: CodePointer): TCallableInfo;
-    class function CreateMapFileInfo: TObject; static;
-  published
-    {list of callable infos.
-    @seeAlso(TCallableInfo)}
-    property CallableInfoList: TCollection read FCallableInfoList;
-  end;
 
   {Parsed callable info.}
+
+  { TCallableInfo }
+
   TCallableInfo = class(TCollectionItem)
   strict private
     FUnitName: string;
     FClassName: string;
-    FMethodNames: TStrings;
-    FParameters: TStrings;
+    FMethodName: string;
+    FAdditionalCallableInfo: string;
+    FParameters: TStringList;
     FReturnType: string;
-    FStartCallableAddress: int64;
-    FEndCallableAddress: int64;
+    FStartCallableAddress: SizeInt;
+    FEndCallableAddress: SizeInt;
   public
+    constructor Create(ACollection: TCollection); override;
     {Check Address in callable address  range.
     @param Address caller address
     @returns @true if Address in callable address  range}
@@ -224,18 +69,90 @@ type
     {Class name. Can be ''}
     property ClassName: string read FClassName write FClassName;
     {Method names list. Can be empty(for entry point)}
-    property MethodNames: TStrings read FMethodNames write FMethodNames;
+    property MethodName: string read FMethodName write FMethodName;
+    property AdditionalCallableInfo: string
+      read FAdditionalCallableInfo write FAdditionalCallableInfo;
     {Parameter type names list. Can be empty}
-    property Parameters: TStrings read FParameters write FParameters;
+    property Parameters: TStringList read FParameters write FParameters;
     {Return type name. Can be ''}
     property ReturnType: string read FReturnType write FReturnType;
     {Range start address, inclusive.}
-    property StartCallableAddress: int64 read FStartCallableAddress
+    property StartCallableAddress: SizeInt read FStartCallableAddress
       write FStartCallableAddress;
     {Range end address, inclusive.}
-    property EndCallableAddress: int64 read FEndCallableAddress
+    property EndCallableAddress: SizeInt read FEndCallableAddress
       write FEndCallableAddress;
   end;
+
+  { TCallableInfoCollectionEnumerator }
+
+  TCallableInfoCollectionEnumerator = class(TCollectionEnumerator)
+  strict private
+    function GetCurrent: TCallableInfo;
+  public
+    property Current: TCallableInfo read GetCurrent;
+  end;
+
+  { TCallableInfoCollection }
+
+  TCallableInfoCollection = class(TCollection)
+  private
+    procedure SetItem(Index: integer; AValue: TCallableInfo);
+    function GetItem(Index: integer): TCallableInfo;
+  public
+    constructor Create;
+    function Add: TCallableInfo;
+    property Items[Index: integer]: TCallableInfo read GetItem write SetItem;
+    function GetEnumerator: TCallableInfoCollectionEnumerator;
+    class function CreateCallableInfoCollection: TCollection; static;
+  end;
+
+  {Linker map file code section start marker.}
+  {
+    Persistence Map file info containing parsed callable info.
+    Must be serialized into file and distributed with application.@br
+     @author Artem A. Bogomolov(artem.bogomolov.a@gmail.com)
+  }
+
+  { TMapFileInfo }
+
+  TMapFileInfo = class(TPersistent)
+  strict  private
+    FCallableInfoList: TCallableInfoCollection;
+    procedure ParsePreparedMapFileData(AMapFileData: TStringDynArray);
+    procedure HandleMethodSignature(AMapFileData: TStringDynArray;
+      var Index: integer; var ResultArray: TStringDynArray);
+    {Exclude from AMapFileData strings with (@link TRY_RES_STRING_MODULE_NAME) and (@link TRY_TC_MODULE_NAME)}
+    function FilterMapFileDataString(AMapFileData: TStringDynArray;
+      MethodSignatureFilter: string): TStringDynArray;
+    function IsAvailableMethodSignature(TestingMethodSignature: string;
+      MethodSignatureFilters: TStringArray): boolean;
+    function IsPascalMain(TestingSignature: string): boolean;
+    procedure HandleRegularMethod(AMapFileData: TStringDynArray;
+      var Index: integer; var ResultArray: TStringDynArray);
+    procedure HandlePascalMain(MethodSignature: string;
+      var ResultArray: TStringDynArray);
+
+  public
+    {Creates instance from AMapFileData lines.
+    @param AMapFileData lines from map file in '.text' section(only code).}
+    constructor Create(AMapFileData: TStringDynArray; MethodSignatureFilter: string);
+    {For serialization}
+    constructor Create;
+    {For serialization, cleaning state.}
+    destructor Destroy; override;
+    {find callable info by CallerPointer
+    @param CallerInfo code pointer from stack frame
+    @returns @nil, if callable info for passed CallerPointer not found.}
+    function FindCallerInfoByAddress(CallerPointer: CodePointer): TCallableInfo;
+    class function CreateMapFileInfo: TObject; static;
+  published
+    {list of callable infos.
+    @seeAlso(TCallableInfo)}
+    property CallableInfoList: TCallableInfoCollection read FCallableInfoList;
+  end;
+
+  EMapInfoCreateException = class(Exception);
 
 const
   {callable info part separator }
@@ -244,195 +161,107 @@ const
   PROC_TYPE = 'PROC';
   {function marker}
   FUNC_TYPE = 'FUNC';
-  {code section record marker}
-  CODE_SECTION_MARKER = '.text.';
-  {pascal application entry point }
-  PASCALMAIN_PROC_NAME = 'PASCALMAIN';
-  {main proc name}
-  MAIN_PROC_NAME = 'main';
-  {Unit name prefix.}
-  UNIT_NAME_SEPARATOR = 'n_';
-  {Linker map file code section start marker.}
-  MAP_FILE_MEMORY_MAP_MARKER = 'Memory map (ImageBase=0x0000000100000000)';
-  {Linker map file code section end marker(data section started with string contain it).}
-  DATA_SECTION_MARKER = '.data';
-  {Unit name separator.}
-  UNIT_NAME_TAIL_SEPARATOR = '$';
-  {main application module prefix.}
-  UNIT_PROGRAM_IDENTIFIER = 'n_p';
-  {Class name separator.}
-  CLASS_NAME_SEPARATOR = '_$';
-  {Method definition separator.}
-  METHOD_DEFINITION_SEPARATOR = '_';
-  {Parameter type name separator.}
-  PARAMETER_TYPE_NAME_SEPARATOR = '$';
-  {Return type name separator.}
-  RETURN_TYPE_NAME_SEPARATOR = '$$';
-  {Target method(terminal method)}
-  TARGET_METHOD_DEFINITION_SEPARATOR = '_$$_';
-  {May be resource string module name}
-  TRY_RES_STRING_MODULE_NAME = 'n_RESSTR_';
-  {Unknown module name}
-  TRY_TC_MODULE_NAME = 'n_TC_';
 
+const
+  PASCAL_MAIN_METHOD_SIGNATURE = 'n_main';
+  PASCAL_PROGRAM_NAMESPACE = 'n_p$';
+  BASIC_METHOD_SIGNATURE_FILTER =
+    PASCAL_PROGRAM_NAMESPACE + ',' + PASCAL_MAIN_METHOD_SIGNATURE;
+  N_MAIN_METHOD_SIGNATURE_FILTER = CODE_ITEM_START_MARKER + PASCAL_MAIN_METHOD_SIGNATURE;
 //----------------------REGEXP---------------------------------------------//
 const
-  BASICALLY_METHOD_SIGNATURE_PATTERN = '(n\_([A-z0-9\.]*))'+//namespace, or module name
-  '((\$)([A-z0-9\.]*))*'+//module name in namespace
-  '(\$)*'//optionally namespace or module name separator
-  ;
+  BASICALLY_METHOD_SIGNATURE_PATTERN =
+    '^(n\_)(main|((p\$)*([a-z][a-z0-9\_\.]+))(\$)*(\_\$)+(([a-z][a-z0-9\.]*)*(\_\$)+((\_)+(([a-z][a-z0-9\.]*)+((\$[a-z0-9\.]+)*)((\$\$[a-z0-9\.]*)*))(\_\$)?)*|(((?12))((?14))((?15))((?17))((?19))))*(\_\_\$)*(\$\_)((?14))((?15))((?17)))$';
 //----------------------END REGEXP-----------------------------------------//
 implementation
 
-uses StrUtils,Regex;
+uses Regexpr, StrUtils;
 
-{ TCallableInfoParser }
+type
+{ The finite state machine implemented following grammatic:
+    Map file structure contains one more sections(and linker log),
+  but we are currently interested only '.text' section.
+  It mapped to real address table for methods(and units, classes in runtime).@br
+  This section started with constant @link(MAP_FILE_MEMORY_MAP_MARKER).@br
+  BNF form for map file certain line for parsing:@br
+  @bold(<mapFileHeaderString> ::= [<applicationEntry><moduleNameSeparator>]<moduleName>
+  <moduleNameSeparator> [<classNameSeparator><className><classNameSeparator>]
+  [<methodDefintionSeparator><methodDefinitions>][<targetMethodSeparator><methodDefinition>]
+  [' '<startAddress>' '<length>' '<moduleObjectFile>],
+  where)
+  @orderedList(
+  @item(@bold(applicationEntry), application main module(with @italic(lpr module)).
+  Value must be only 'n_p')
+  @item(@bold(moduleNameSeparator), symbol @link(UNIT_NAME_TAIL_SEPARATOR))
+  @item(@bold(moduleName), unit that contains method(or class).Started with 'n_'
+  and must satisfy pattern 'n_[A-Za-z0-9_]*|n_main'. 'main' - program entry point
+  main 'begin...end' block. @link(UNIT_PROGRAM_IDENTIFIER))
+  @item(@bold(classNameSeparator), symbol @link(CLASS_NAME_SEPARATOR))
+  @item(@bold(className), class name that contains method(can be empty
+  if this method is owned unit). Must be satisfy pattern '[A-Za-z0-9_]*')
+  @item(@bold(methodDefinitionSeparator) for non target method(outer methods for any inner)
+  Value must be @link(METHOD_DEFINITION_SEPARATOR))
+  @item(@bold(<methodDefinitions>) ::= <methodDefintionSeparator>[<methodDefinitions>|<methodDefinition>],
+  method definition. Each module definition contain raw method name, list of parameters
+  and  return type if exists one of them.)
+  @item(@bold(<methodDefinition>) ::=<methodName>[<parameterTypeNameSeparator><parameterTypeName>]
+  [<returTypeSeparator><returnTypeName>])
+  @item(@bold(methodName), method name. Must be satisfy [A-Za-z0-9]* because
+  symbol '_' is methodDefinitionSeparator)
+  @item(@bold(parameterTypeNameSeparator), symbol @link(PARAMETER_TYPE_NAME_SEPARATOR))
+  @item(@bold(parameterTypeName), parameter type name. Must be satisfy pattern '[A-Za-z0-9]*')
+  @item(@bold(returTypeSeparator), symbol @link(RETURN_TYPE_NAME_SEPARATOR))
+  @item(@bold(returnTypeName), return value type name. Must be satisfy pattern '[A-Za-z0-9]*')
+  @item(@bold(targetMethodSeparator), symbol @link(TARGET_METHOD_DEFINITION_SEPARATOR))
+  @item(@bold(startAddress), start entry point(main) address, in bytes )
+  @item(@bold(length), length entry point(main) address, in bytes)
+  @item(@bold(moduleObjectFile), object file for module(e.g. 'moduleName.o'))
+  )
+  All names are in lower cases!@br
+  @bold(<addressInfoString> ::= <startAddress>' '<length>' '<moduleObjectFile>,where)
+  @orderedList(
+     @item(@bold(startAddress), start entry point(main) address, in bytes )
+  @item(@bold(length), length entry point(main) address, in bytes)
+  @item(@bold(moduleObjectFile), object file for module(e.g. 'moduleName.o'))
+  )
+   @author Artem A. Bogomolov(artem.bogomolov.a@gmail.com)
+ }
 
-procedure TCallableInfoParser.FillCallableInfo(HeaderData: TStringArray;
-  AddressInfoData: TStringArray);
-var
-  Length: string;
-  FullMethodName: string;
-  CallableInfo: TCallableInfo;
-begin
-  CallableInfo := TCallableInfo(FCallableInfoList.Add);
-  Length := AddressInfoData[1];
-  FullMethodName := HeaderData[0].Substring(CODE_SECTION_MARKER.Length);
-  CallableInfo.UnitName := GetUnitName(FullMethodName);
-  CallableInfo.ClassName := {GetClassName(}FullMethodName{)};
-  CallableInfo.MethodNames := TStringList.Create;
-  CallableInfo.MethodNames.Add('');
-  CallableInfo.Parameters := TStringList.Create;
-  CallableInfo.Parameters.Add('');
-  if IsAvailableLength(Length) then
-  begin
-    FillAddressInfoFromAddressData(CallableInfo, AddressInfoData);
-    exit;
+  { TCallableInfoParser }
+
+  TCallableInfoParser = class
+  strict private
+    FCallableInfoList: TCallableInfoCollection;
+    FRegExp: TRegExpr;
+    procedure FillAddressInfo(CallableInfo: TCallableInfo; AddressInfoString: string);
+    procedure FillNamingInfo(CallableInfo: TCallableInfo;
+      MethodSignatureString: string);
+  public
+   {Creates parser instance with specified CallableInfoList.
+   @param CallableInfoList TMapFileInfo.CallableInfoList
+   }
+    constructor Create(var CallableInfoList: TCallableInfoCollection);
+    destructor Destroy; override;
+   {Add new item in callable collection
+   @param MethodSignatureString <mapFileHeaderString>
+   @param AddressInfoString <addressInfoString>}
+    procedure ParseCallableInfoFromStrings(MethodSignatureString: string;
+      AddressInfoString: string);
   end;
-  FillAddressInfoFromHeaderData(CallableInfo, HeaderData);
-end;
-
-function TCallableInfoParser.RemoveXFromHexString(Address: string): string;
-begin
-  Result := Address.Substring(2);
-end;
-
-function TCallableInfoParser.IsAvailableLength(Length: string): boolean;
-begin
-  Result := (Length <> PASCALMAIN_PROC_NAME) and (Length <> MAIN_PROC_NAME);
-end;
-
-function TCallableInfoParser.GetUnitName(var FullMethodName: string): string;
-begin
-  Result := FullMethodName.Substring(0, FullMethodName.IndexOf(
-    UNIT_NAME_TAIL_SEPARATOR));
-  if (Result = UNIT_PROGRAM_IDENTIFIER) then
-  begin
-    FullMethodName := FullMethodName.Substring(Length(UNIT_PROGRAM_IDENTIFIER));
-    Result := ExtractPartName(FullMethodName, UNIT_NAME_TAIL_SEPARATOR,
-      UNIT_NAME_TAIL_SEPARATOR);
-  end
-  else
-  begin
-    Result := Result.Substring(length(UNIT_NAME_SEPARATOR));
-  end;
-  FullMethodName := FullMethodName.substring(length(UNIT_NAME_SEPARATOR) +
-    length(Result));
-  ReturnMethodSeparator(Result, FullMethodName);
-  CorrectUnitSepartor(FullMethodName);
-end;
-
-function TCallableInfoParser.GetClassName(var FullMethodName: string): string;
-begin
-  Result := FullMethodName;{ExtractPartName(FullMethodName, CLASS_NAME_SEPARATOR,
-    CLASS_NAME_SEPARATOR);
-  if (Result = '') then
-    writeln(FullMethodName);
-  returnMethodSeparator(Result, FullMethodName);}
-end;
-
-function TCallableInfoParser.GetMethodNamesList(var FullMethodName: string):
-TStringDynArray;
-begin
-  SetLength(Result, 1);
-  Result[0] := {ExtractPartName(FullMethodName, METHOD_DEFINITION_SEPARATOR,
-    TARGET_METHOD_DEFINITION_SEPARATOR)}FullMethodName;
-
-end;
-
-function TCallableInfoParser.ExtractPartName(var FullMethodName: string;
-  const HeadDelimiter: string; const TailDelimiter: string): string;
-var
-  partNameFrontIndex, partNameLastIndex: integer;
-  partNameFrontIndexWithCarry, partNameLastIndexWithoutCarry: integer;
-  headCarry, tailCarry: integer;
-begin
-  Result := '';
-  headCarry := length(HeadDelimiter);
-  tailCarry := length(TailDelimiter);
-  partNameFrontIndex := FullMethodName.IndexOf(HeadDelimiter);
-  partNameFrontIndexWithCarry := partNameFrontIndex + headCarry;
-  partNameLastIndex := FullMethodName.IndexOf(TailDelimiter,
-    partNameFrontIndexWithCarry);
-  partNameLastIndexWithoutCarry := partNameLastIndex - tailCarry;
-  Result := FullMethodName.Substring(partNameFrontIndexWithCarry,
-    partNameLastIndexWithoutCarry);
-  FullMethodName := FullMethodName.Substring(partNameLastIndexWithoutCarry - headCarry);
-end;
-
-procedure TCallableInfoParser.ReturnMethodSeparator(var PartName: string;
-  var FullMethodName: string);
-begin
-  if (PartName.EndsWith(METHOD_DEFINITION_SEPARATOR)) then
-  begin
-    PartName := PartName.Substring(0, length(PartName) - 1);
-    FullMethodName := METHOD_DEFINITION_SEPARATOR + FullMethodName;
-  end;
-end;
-
-procedure TCallableInfoParser.FillAddressInfoFromAddressData(
-  CallableInfo: TCallableInfo; AddressInfoData: TStringArray);
-begin
-  CallableInfo.StartCallableAddress :=
-    Hex2Dec64(RemoveXFromHexString(AddressInfoData[0]));
-  CallableInfo.EndCallableAddress :=
-    CallableInfo.StartCallableAddress +
-    Hex2Dec64(RemoveXFromHexString(AddressInfoData[1]));
-
-end;
-
-procedure TCallableInfoParser.FillAddressInfoFromHeaderData(
-  CallableInfo: TCallableInfo;
-  HeaderData: TStringArray);
-begin
-  CallableInfo.StartCallableAddress := Hex2Dec64(RemoveXFromHexString(HeaderData[1]));
-  CallableInfo.EndCallableAddress :=
-    CallableInfo.StartCallableAddress + Hex2Dec64(RemoveXFromHexString(HeaderData[2]));
-end;
-
-procedure TCallableInfoParser.CorrectUnitSepartor(var FullMethodName: string);
-begin
-  if FullMethodName.StartsWith(UNIT_NAME_TAIL_SEPARATOR) then
-    FullMethodName := FullMethodName.Substring(1);
-end;
-
-constructor TCallableInfoParser.Create(var CallableInfoList: TCollection);
-begin
-  FCallableInfoList := CallableInfoList;
-end;
-
-procedure TCallableInfoParser.ParseCallableInfoFromStrings(MethodHeader: string;
-  AddressInfo: string);
-var
-  HeaderData: TStringArray;
-  AddressInfoData: TStringArray;
-begin
-  HeaderData := MethodHeader.Split(' ', TStringSplitOptions.ExcludeEmpty);
-  AddressInfoData := AddressInfo.Split(' ', TStringSplitOptions.ExcludeEmpty);
-  FillCallableInfo(HeaderData, AddressInfoData);
-end;
 
 { TCallableInfo }
+
+constructor TCallableInfo.Create(ACollection: TCollection);
+begin
+  inherited Create(ACollection);
+  FParameters := TStringList.Create;
+end;
+
+destructor TCallableInfo.Destroy;
+begin
+  FreeAndNil(FParameters);
+  inherited Destroy;
+end;
 
 function TCallableInfo.IsMethodGammaAddress(Address: Pointer): boolean;
 begin
@@ -445,34 +274,41 @@ begin
   Result := FUnitName + LOG_PART_SEPARATOR + FClassName;
 {+ LOG_PART_SEPARATOR +
     FMethodNames[0]};
-  if FReturnType = '' then
+  if FReturnType = EmptyStr then
     Result := Result + LOG_PART_SEPARATOR + PROC_TYPE
   else
     Result := Result + LOG_PART_SEPARATOR + FUNC_TYPE;
 end;
 
-destructor TCallableInfo.Destroy;
-begin
-  FreeAndNil(FMethodNames);
-  FreeAndNil(FParameters);
-  inherited Destroy;
-end;
-
 { TMapFileInfo }
 
-constructor TMapFileInfo.Create(AMapFileData: TStringDynArray);
+constructor TMapFileInfo.Create(AMapFileData: TStringDynArray;
+  MethodSignatureFilter: string);
 var
   FilteredMapFileData: TStringDynArray;
+  Temp: TStringList;
+  i: integer;
 begin
+  FilteredMapFileData := FilterMapFileDataString(AMapFileData, MethodSignatureFilter);
   Create;
-  FilteredMapFileData :={FilterMapFileDataString(}AMapFileData{)};
+  Temp := TStringList.Create();
+  try
+    Temp.Duplicates := TDuplicates.dupError;
+    for i := 0 to round(Length(FilteredMapFileData) / 2) - 1 do
+      Temp.Add(FilteredMapFileData[i * 2]);
+    Temp.Sorted := True;
+    Temp.SaveToFile(
+      'c:\Users\artem.bogomolov.a\develop\projects\private\family-budget\family-budget-server\target\map.1');
+  finally
+    FreeAndNil(Temp);
+  end;
   ParsePreparedMapFileData(FilteredMapFileData);
 end;
 
-constructor TMapFileInfo.Create;
+constructor TMapFileInfo.Create();
 begin
   inherited Create;
-  FCallableInfoList := TCollection.Create(TCallableInfo);
+  FCallableInfoList := TCallableInfoCollection.Create();
 end;
 
 destructor TMapFileInfo.Destroy;
@@ -480,6 +316,114 @@ begin
   FCallableInfoList.Clear;
   FreeAndNil(FCallableInfoList);
   inherited Destroy;
+end;
+
+procedure TMapFileInfo.ParsePreparedMapFileData(AMapFileData: TStringDynArray);
+var
+  i, Count: integer;
+  MethodSignatureString: string;
+  AddressInfoString: string;
+  CallableInfoParser: TCallableInfoParser;
+begin
+  i := 0;
+  Count := High(AMapFileData);
+  CallableInfoParser := TCallableInfoParser.Create(FCallableInfoList);
+  while i < Count - 1 do
+  begin
+    MethodSignatureString := AMapFileData[i];
+    Inc(i);
+    AddressInfoString := AMapFileData[i];
+    Inc(i);
+    CallableInfoParser.ParseCallableInfoFromStrings(
+      MethodSignatureString, AddressInfoString);
+  end;
+  FreeAndNil(CallableInfoParser);
+end;
+
+procedure TMapFileInfo.HandleMethodSignature(AMapFileData: TStringDynArray;
+  var Index: integer; var ResultArray: TStringDynArray);
+var
+  TestingMethodSignature: string;
+begin
+  TestingMethodSignature := AMapFileData[Index].trim();
+  if IsPascalMain(TestingMethodSignature) then
+  begin
+    HandlePascalMain(TestingMethodSignature, ResultArray);
+    exit;
+  end;
+  HandleRegularMethod(AMapFileData, Index, ResultArray);
+end;
+
+procedure TMapFileInfo.HandlePascalMain(MethodSignature: string;
+  var ResultArray: TStringDynArray);
+var
+  PascalMainMethodArray: TStringArray;
+  PascalMainTempMapArray: TStringDynArray;
+  Index: integer;
+begin
+  PascalMainMethodArray := MethodSignature.Split(' ', TStringSplitOptions.ExcludeEmpty);
+  SetLength(PascalMainTempMapArray, 2);
+  PascalMainTempMapArray[0] := PascalMainMethodArray[0];
+  PascalMainTempMapArray[1] := PascalMainMethodArray[1] + ' ' + PascalMainMethodArray[2];
+  Index := 0;
+  HandleRegularMethod(PascalMainTempMapArray, Index, ResultArray);
+  SetLength(PascalMainTempMapArray, 0);
+end;
+
+procedure TMapFileInfo.HandleRegularMethod(AMapFileData: TStringDynArray;
+  var Index: integer; var ResultArray: TStringDynArray);
+begin
+  SetLength(ResultArray, Length(ResultArray) + 1);
+  ResultArray[Length(ResultArray) - 1] :=
+    AMapFileData[Index].trim().Substring(CODE_ITEM_START_MARKER_LENGTH);
+  Inc(Index);
+  SetLength(ResultArray, Length(ResultArray) + 1);
+  ResultArray[Length(ResultArray) - 1] := AMapFileData[Index].trim();
+end;
+
+function TMapFileInfo.FilterMapFileDataString(AMapFileData: TStringDynArray;
+  MethodSignatureFilter: string): TStringDynArray;
+var
+  i: integer;
+  MethodSignatureFilters: TStringArray;
+  TestingSignature: string;
+begin
+  MethodSignatureFilter := MethodSignatureFilter + ',' + BASIC_METHOD_SIGNATURE_FILTER;
+  MethodSignatureFilters := MethodSignatureFilter.Split(',');
+  i := 0;
+  while i <= Length(AMapFileData) - 1 do
+  begin
+    TestingSignature := AMapFileData[i].trim();
+    if IsAvailableMethodSignature(TestingSignature, MethodSignatureFilters) then
+    begin
+      HandleMethodSignature(AMapFileData, i, Result);
+    end;
+    Inc(i);
+  end;
+  SetLength(MethodSignatureFilters, 0);
+end;
+
+function TMapFileInfo.IsAvailableMethodSignature(TestingMethodSignature: string;
+  MethodSignatureFilters: TStringArray): boolean;
+var
+  i: integer;
+begin
+  Result := False;
+  if not TestingMethodSignature.StartsWith(CODE_ITEM_START_MARKER) then
+    exit;
+  for i := 0 to Length(MethodSignatureFilters) - 1 do
+  begin
+    if TestingMethodSignature.Contains(MethodSignatureFilters[i]) then
+    begin
+      Result := True;
+      exit;
+    end;
+  end;
+end;
+
+function TMapFileInfo.IsPascalMain(TestingSignature: string): boolean;
+begin
+  Result := TestingSignature.StartsWith(N_MAIN_METHOD_SIGNATURE_FILTER);
 end;
 
 function TMapFileInfo.FindCallerInfoByAddress(CallerPointer: CodePointer): TCallableInfo;
@@ -503,35 +447,112 @@ begin
   Result := TMapFileInfo.Create;
 end;
 
-function TMapFileInfo.FilterMapFileDataString(AMapFileData: TStringDynArray):
-TStringDynArray;
-begin
+{ TCallableInfoCollectionEnumerator }
 
+function TCallableInfoCollectionEnumerator.GetCurrent: TCallableInfo;
+begin
+  Result := inherited GetCurrent as TCallableInfo;
 end;
 
-procedure TMapFileInfo.ParsePreparedMapFileData(AMapFileData: TStringDynArray);
-var
-  i, Count: integer;
-  MapFileString: string;
-  AddressInfo: string;
-  CallableInfoParser: TCallableInfoParser;
+{ TCallableInfoCollection }
+
+constructor TCallableInfoCollection.Create;
 begin
-  i := 0;
-  Count := High(AMapFileData);
-  CallableInfoParser := TCallableInfoParser.Create(FCallableInfoList);
-  while i < Count - 1 do
-  begin
-    mapFileString := AMapFileData[i];
-    if not mapFileString.StartsWith(CODE_SECTION_MARKER) then
+  inherited Create(TCallableInfo);
+end;
+
+function TCallableInfoCollection.Add: TCallableInfo;
+begin
+  Result := inherited Add as TCallableInfo;
+end;
+
+procedure TCallableInfoCollection.SetItem(Index: integer; AValue: TCallableInfo);
+begin
+  inherited SetItem(Index, AValue);
+end;
+
+function TCallableInfoCollection.GetItem(Index: integer): TCallableInfo;
+begin
+  Result := inherited GetItem(Index) as TCallableInfo;
+end;
+
+function TCallableInfoCollection.GetEnumerator: TCallableInfoCollectionEnumerator;
+begin
+  Result := inherited GetEnumerator as TCallableInfoCollectionEnumerator;
+end;
+
+class function TCallableInfoCollection.CreateCallableInfoCollection: TCollection;
+begin
+  Result := TCallableInfoCollection.Create;
+end;
+
+{ TCallableInfoParser }
+
+constructor TCallableInfoParser.Create(var CallableInfoList: TCallableInfoCollection);
+begin
+  FCallableInfoList := CallableInfoList;
+  FRegExp := TRegExpr.Create(BASICALLY_METHOD_SIGNATURE_PATTERN);
+  //FRegExp.ModifierG := True;
+  //FRegExp.ModifierM := True;
+  FRegExp.EmptyInputRaisesError := True;
+  FRegExp.Compile;
+end;
+
+destructor TCallableInfoParser.Destroy;
+begin
+  FreeAndNil(FRegExp);
+  inherited Destroy;
+end;
+
+procedure TCallableInfoParser.FillAddressInfo(CallableInfo: TCallableInfo;
+  AddressInfoString: string);
+var
+  AddressInfoStringParts: TStringArray;
+begin
+  AddressInfoStringParts := AddressInfoString.Split(' ',
+    TStringSplitOptions.ExcludeEmpty);
+  CallableInfo.StartCallableAddress :=
+    Hex2Dec64(AddressInfoStringParts[0].trim().Substring(2));
+  CallableInfo.EndCallableAddress :=
+    CallableInfo.StartCallableAddress + Hex2Dec64(
+    AddressInfoStringParts[1].trim().Substring(2));
+end;
+
+procedure TCallableInfoParser.FillNamingInfo(CallableInfo: TCallableInfo;
+  MethodSignatureString: string);
+var
+  parameters: TStringArray;
+  i: integer;
+begin
+  writeln(format('parsing signature''%s''', [MethodSignatureString]));
+  FRegExp.Exec(MethodSignatureString);
+  repeat
+    for i := 0 to FRegExp.SubExprMatchCount do
     begin
-      Inc(i);
-      Continue;
+      writeln(format('signature part %d is ''%s''', [i, FRegExp.Match[i]]));
     end;
-    Inc(i);
-    AddressInfo := AMapFileData[i];
-    CallableInfoParser.ParseCallableInfoFromStrings(mapFileString, AddressInfo);
-  end;
-  FreeAndNil(CallableInfoParser);
+  until FRegExp.ExecNext();
+  CallableInfo.UnitName := FRegExp.Match[2];
+  CallableInfo.ClassName := FRegExp.Match[5];
+  CallableInfo.AdditionalCallableInfo := FRegExp.Match[3];
+  CallableInfo.MethodName := FRegExp.Match[4];
+  parameters := string(FRegExp.Match[5]).Split(['$'], TStringSplitOptions.ExcludeEmpty);
+  for i := 0 to Length(parameters) - 1 do
+    CallableInfo.Parameters.Add(parameters[i]);
+  //  SetLength(parameters, 0);
+  CallableInfo.ReturnType := FRegExp.Match[6];
+  writeln(format('signature''%s'' parsed', [MethodSignatureString]));
+end;
+
+procedure TCallableInfoParser.ParseCallableInfoFromStrings(
+  MethodSignatureString: string;
+  AddressInfoString: string);
+var
+  CallableInfo: TCallableInfo;
+begin
+  CallableInfo := FCallableInfoList.Add;
+  FillNamingInfo(CallableInfo, MethodSignatureString);
+  FillAddressInfo(CallableInfo, AddressInfoString);
 end;
 
 end.
