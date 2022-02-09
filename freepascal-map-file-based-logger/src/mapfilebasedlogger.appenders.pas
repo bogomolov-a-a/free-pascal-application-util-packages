@@ -5,7 +5,7 @@ unit MapFileBasedLogger.Appenders;
 
 interface
 
-uses MapFileBasedLogger.BasicTypes, Classes;
+uses Classes, MapFileBasedLogger.BasicTypes;
 
 type
 
@@ -41,7 +41,8 @@ type
 
   TAbstractLogAppender = class(TInterfacedObject, ILogAppender)
   strict private
-  const UNKNOWN_CALLABLE_STRING:String='UNKNOWN METHOD';
+  const
+    UNKNOWN_CALLABLE_STRING: string = 'UNKNOWN METHOD';
   strict private
     FLogFilterArray: TLogFilterArray;
     {Get printable name of message log level
@@ -55,7 +56,7 @@ type
     {for multithreading.}
     FRTLCriticalSection: TRTLCriticalSection;
     {Directly flushing message into device(file,db,console,mail...)}
-    function WriteToAppendable(FullMessage: string):boolean; virtual; abstract;
+    function WriteToAppendable(FullMessage: string): boolean; virtual; abstract;
   protected
     constructor Create(LogFilterArray: TLogFilterArray);
     destructor Destroy; override;
@@ -70,7 +71,7 @@ type
   if it exists.}
   TConsoleAppender = class(TAbstractLogAppender)
   strict protected
-    function WriteToAppendable(FullMessage: string):boolean; override;
+    function WriteToAppendable(FullMessage: string): boolean; override;
   end;
 
 const
@@ -86,8 +87,8 @@ type
   TRotateFileAppender = class(TAbstractLogAppender)
   strict private
   const
-    FILE_EXTENSION_FORMAT:   String='yyyy-mm-dd';
-    strict private
+    FILE_EXTENSION_FORMAT: string = 'yyyy-mm-dd';
+  strict private
     {basic filenae}
     FFileName: string;
     FLoggingDirectory: string;
@@ -95,11 +96,11 @@ type
     FMaxFileSize: int64;
     FCurrentFileStream: TFileStream;
     function GetCurrentFileName(): string;
-    function GetCurrentFileStream():TFileStream;
+    function GetCurrentFileStream(): TFileStream;
     procedure RemoveUnusedLogFiles();
-    function TestChangedFileNameDate():boolean;
+    function TestChangedFileNameDate(): boolean;
   strict protected
-    function WriteToAppendable(FullMessage: string):boolean; override;
+    function WriteToAppendable(FullMessage: string): boolean; override;
   protected
     constructor Create(FileName: string; LoggingDirectory: string;
       LogFilterArray: TLogFilterArray; MaxPeriodInDays: integer; MaxFileSize: int64);
@@ -119,9 +120,11 @@ type
 
 implementation
 
-uses TypInfo, DateUtils, LazFileUtils,SysUtils;
+uses DateUtils, LazFileUtils, SysUtils, TypInfo;
+
 resourcestring
-  EXTENSION_HAS_WRONG_FORMAT='File extention ''%s'' don''t match for ''%s'' format!';
+  EXTENSION_HAS_WRONG_FORMAT = 'File extention ''%s'' don''t match for ''%s'' format!';
+
 { TRotateFileAppender }
 
 constructor TRotateFileAppender.Create(FileName: string; LoggingDirectory: string;
@@ -142,68 +145,71 @@ begin
   FullFileName := GetCurrentFileName();
 end;
 
-function TRotateFileAppender.WriteToAppendable(FullMessage: string):boolean;
+function TRotateFileAppender.WriteToAppendable(FullMessage: string): boolean;
 var
   MessageLength, Count: integer;
 begin
   FullMessage := FullMessage + LineEnding;
   MessageLength := Length(FullMessage);
   Count := GetCurrentFileStream().Write(FullMessage, MessageLength);
-  result:=MessageLength = Count;
+  Result := MessageLength = Count;
 end;
 
 function TRotateFileAppender.GetCurrentFileName(): string;
 var
   Extension: string;
   CurrentDate: TDateTime;
-  DateString:String;
+  DateString: string;
 begin
   CurrentDate := Date;
-  DateTimeToString(DateString,FILE_EXTENSION_FORMAT,CurrentDate);
-  Extension := '.' +DateString;
+  DateTimeToString(DateString, FILE_EXTENSION_FORMAT, CurrentDate);
+  Extension := '.' + DateString;
   Result := IncludeTrailingPathDelimiter(FLoggingDirectory) +
     LazFileUtils.ExtractFileNameOnly(FFileName) + extension;
 end;
 
 function TRotateFileAppender.GetCurrentFileStream(): TFileStream;
-Var
-  CurrentFileName:String;
+var
+  CurrentFileName: string;
 begin
   EnterCriticalSection(FRTLCriticalSection);
   if TestChangedFileNameDate() then
     FreeAndNil(FCurrentFileStream);
   try
-    if FCurrentFileStream<>nil then
+    if FCurrentFileStream <> nil then
       exit(FCurrentFileStream);
-    CurrentFileName:=GetCurrentFileName;
-    if FileExists(CurrentFileName)then
-       FCurrentFileStream:=TFileStream.Create(CurrentFileName,fmOpenWrite or fmShareDenyWrite)
+    CurrentFileName := GetCurrentFileName;
+    if FileExists(CurrentFileName) then
+      FCurrentFileStream := TFileStream.Create(CurrentFileName,
+        fmOpenWrite or fmShareDenyWrite)
     else
-      FCurrentFileStream:=TFileStream.Create(CurrentFileName,fmCreate or fmShareDenyWrite);
-    FCurrentFileStream.Seek(0,TSeekOrigin.soEnd);
-    result:=FCurrentFileStream;
+      FCurrentFileStream := TFileStream.Create(CurrentFileName, fmCreate or
+        fmShareDenyWrite);
+    FCurrentFileStream.Seek(0, TSeekOrigin.soEnd);
+    Result := FCurrentFileStream;
   finally
     LeaveCriticalSection(FRTLCriticalSection);
   end;
 end;
 
 procedure TRotateFileAppender.RemoveUnusedLogFiles();
-var  SearchRec:TSearchRec;
+var
+  SearchRec: TSearchRec;
 begin
-  if(FindFirstUTF8(FLoggingDirectory,faNormal, SearchRec)<>0)then
+  if (FindFirstUTF8(FLoggingDirectory, faNormal, SearchRec) <> 0) then
     exit;
 
 end;
 
 function TRotateFileAppender.TestChangedFileNameDate(): boolean;
-Var
-  Extention,DateString:String;
-  FileDate:TDateTime;
+var
+  Extention, DateString: string;
+  FileDate: TDateTime;
 begin
-  Extention:=ExtractFileExt(GetCurrentFileName);
-  DateString:=Extention.Substring(1);
-  FileDate:=ScanDateTime(FILE_EXTENSION_FORMAT,DateString);
-  result:=FileDate<>Date;
+  Extention := ExtractFileExt(GetCurrentFileName);
+  DateString := Extention.Substring(1);
+  FileDate := ScanDateTime(FILE_EXTENSION_FORMAT, DateString);
+  Result := FileDate <> Date;
 end;
 
 destructor TRotateFileAppender.Destroy;
@@ -214,10 +220,10 @@ end;
 
 { TConsoleAppender }
 
-function TConsoleAppender.WriteToAppendable(FullMessage: string):Boolean;
+function TConsoleAppender.WriteToAppendable(FullMessage: string): boolean;
 begin
   writeln(FullMessage);
-Result:=true;
+  Result := True;
 end;
 
 { TAbstractLogFilter }
@@ -291,15 +297,20 @@ var
   DatetimeString: string;
   CallableInfoString: string;
 begin
-
   DateTimeToString(DatetimeString, FDateTimeFormat, now());
+
   LevelName := GetLevelName(LogLevel);
-  CallableInfoString := specialize IfThen<String>(CallableInfo<>nil,CallableInfo.ToString,UNKNOWN_CALLABLE_STRING);
+
+  if CallableInfo <> nil then
+    CallableInfoString := CallableInfo.ToString
+  else
+    CallableInfoString := UNKNOWN_CALLABLE_STRING;
+
   {uses TRTLCriticalSection for work in multithreading environment.}
   EnterCriticalSection(FRTLCriticalSection);
   try
-    Result:=WriteToAppendable(DatetimeString + ' ' + LevelName + ' ' +
-      CallableInfoString + ' ' + Message);
+    Result := WriteToAppendable(DatetimeString + ' ' + LevelName +
+      ' ' + CallableInfoString + ' ' + Message);
   finally
     LeaveCriticalSection(FRTLCriticalSection);
   end;

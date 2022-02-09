@@ -8,10 +8,13 @@ interface
 uses
   Classes,
   SysUtils,
-  Types;
+  Types,
+  regexpr;
 
 const
   CODE_SECTION_START_MARKER = '.text';
+  {Linker map file code section end marker(data section started with string contain it).}
+  CODE_SECTION_END_MARKER = '.data';
   CODE_ITEM_START_MARKER = CODE_SECTION_START_MARKER + '.';
   CODE_ITEM_START_MARKER_LENGTH = Length(CODE_ITEM_START_MARKER);
 
@@ -39,22 +42,123 @@ type
     {turn off logging}
     llOff);
 
-  {Parsed callable info.}
+{Parsed callable info.}
+const
+  METHOD_NAME_INFO_PRINTABLE_FORMAT = '%s %s(%s)%s';
+  FUNCTION_MARKER = 'FUNC';
+  PROCEDURE_MARKER = 'PROC';
+
+type
+  { TMethodNameInfo }
+
+  TMethodNameInfo = class(TCollectionItem)
+  strict private
+    FName: string;
+    FParameters: TStringList;
+    FReturnType: string;
+  private
+    class procedure CreateMethodNameInfo(ATarget: TMethodNameInfo;
+      AName: string; AParameterString: string; AReturnType: string);
+  public
+    constructor Create(ACollection: TCollection); override;
+    constructor Create;
+    destructor Destroy; override;
+    function ToString: ansistring; override;
+  published
+    {Method names list. Can't be empty}
+    property Name: string read FName write FName;
+    {Parameter type names list. Can be empty}
+    property Parameters: TStringList read FParameters write FParameters;
+    {Return type name. Can be ''}
+    property ReturnType: string read FReturnType write FReturnType;
+  end;
+
+
+  { TMethodInfoCollectionEnumerator }
+
+  TMethodInfoCollectionEnumerator = class(TCollectionEnumerator)
+  strict private
+    function GetCurrent: TMethodNameInfo;
+  public
+    property Current: TMethodNameInfo read GetCurrent;
+  end;
+
+
+  TMethodInfoCollection = class(TCollection)
+  private
+    procedure SetItem(Index: integer; AValue: TMethodNameInfo);
+    function GetItem(Index: integer): TMethodNameInfo;
+  public
+    constructor Create;
+    function Add: TMethodNameInfo;
+    property Items[Index: integer]: TMethodNameInfo read GetItem write SetItem;
+    function GetEnumerator: TMethodInfoCollectionEnumerator;
+    function ToString: ansistring; override;
+  end;
+
+  { TCallableAddressInfo }
+
+  TCallableAddressInfo = class(TPersistent)
+  strict private
+    FStartCallableAddress: SizeInt;
+    FEndCallableAddress: SizeInt;
+  private
+    constructor Create(AddressInfoString: string);
+  public
+    constructor Create;
+    destructor Destroy; override;
+    function IsMethodGammaAddress(Address: Pointer): boolean;
+  published
+    {Range start address, inclusive.}
+    property StartCallableAddress: SizeInt read FStartCallableAddress
+      write FStartCallableAddress;
+    {Range end address, inclusive.}
+    property EndCallableAddress: SizeInt read FEndCallableAddress
+      write FEndCallableAddress;
+  end;
+
+const
+  CALLABLE_NAME_PRINTABLE_FORMAT = '%s::%s<(%s)>:%s';
+
+type
+  { TCallableNameInfo }
+
+  TCallableNameInfo = class(TPersistent)
+  strict private
+    FRegExp: TRegExpr;
+    FUnitName: string;
+    FClassName: string;
+    FTargetMethodInfo: TMethodNameInfo;
+    FWrappingMethods: TMethodInfoCollection;
+    function IsCurrentMethodPascalMain(): boolean;
+    procedure CreatePascalMainMethodInfo;
+    procedure CreateRegularMethodInfo;
+  private
+    constructor Create(MethodSignatureString: string);
+  public
+    constructor Create;
+    destructor Destroy; override;
+    function ToString: ansistring; override;
+  published
+    {Unit name. Can't be ''}
+    property UnitName: string read FUnitName write FUnitName;
+    {Class name. Can be ''}
+    property ClassName: string read FClassName write FClassName;
+    property TargetMethodInfo: TMethodNameInfo
+      read FTargetMethodInfo write FTargetMethodInfo;
+    property WrappingMethods: TMethodInfoCollection read FWrappingMethods;
+  end;
 
   { TCallableInfo }
 
   TCallableInfo = class(TCollectionItem)
   strict private
-    FUnitName: string;
-    FClassName: string;
-    FMethodName: string;
-    FAdditionalCallableInfo: string;
-    FParameters: TStringList;
-    FReturnType: string;
-    FStartCallableAddress: SizeInt;
-    FEndCallableAddress: SizeInt;
+    FCallableNameInfo: TCallableNameInfo;
+    FCallableAddressInfo: TCallableAddressInfo;
   public
     constructor Create(ACollection: TCollection); override;
+    constructor Create(ACollection: TCollection; ACallableNameInfo: TCallableNameInfo;
+      ACallableAddressInfo: TCallableAddressInfo);
     {Check Address in callable address  range.
     @param Address caller address
     @returns @true if Address in callable address  range}
@@ -64,24 +168,10 @@ type
     {Cleaning state.}
     destructor Destroy; override;
   published
-    {Unit name. Can't be ''}
-    property UnitName: string read FUnitName write FUnitName;
-    {Class name. Can be ''}
-    property ClassName: string read FClassName write FClassName;
-    {Method names list. Can be empty(for entry point)}
-    property MethodName: string read FMethodName write FMethodName;
-    property AdditionalCallableInfo: string
-      read FAdditionalCallableInfo write FAdditionalCallableInfo;
-    {Parameter type names list. Can be empty}
-    property Parameters: TStringList read FParameters write FParameters;
-    {Return type name. Can be ''}
-    property ReturnType: string read FReturnType write FReturnType;
-    {Range start address, inclusive.}
-    property StartCallableAddress: SizeInt read FStartCallableAddress
-      write FStartCallableAddress;
-    {Range end address, inclusive.}
-    property EndCallableAddress: SizeInt read FEndCallableAddress
-      write FEndCallableAddress;
+    property CallableAddressInfo: TCallableAddressInfo
+      read FCallableAddressInfo write FCallableAddressInfo;
+    property CallableNameInfo: TCallableNameInfo
+      read FCallableNameInfo write FCallableNameInfo;
   end;
 
   { TCallableInfoCollectionEnumerator }
@@ -132,7 +222,6 @@ type
       var Index: integer; var ResultArray: TStringDynArray);
     procedure HandlePascalMain(MethodSignature: string;
       var ResultArray: TStringDynArray);
-
   public
     {Creates instance from AMapFileData lines.
     @param AMapFileData lines from map file in '.text' section(only code).}
@@ -155,27 +244,27 @@ type
   EMapInfoCreateException = class(Exception);
 
 const
-  {callable info part separator }
-  LOG_PART_SEPARATOR = ':';
-  {procedure marker}
-  PROC_TYPE = 'PROC';
-  {function marker}
-  FUNC_TYPE = 'FUNC';
-
-const
   PASCAL_MAIN_METHOD_SIGNATURE = 'n_main';
+  PASCAL_MAIN_METHOD_NAME = 'PASCALMAIN';
   PASCAL_PROGRAM_NAMESPACE = 'n_p$';
   BASIC_METHOD_SIGNATURE_FILTER =
     PASCAL_PROGRAM_NAMESPACE + ',' + PASCAL_MAIN_METHOD_SIGNATURE;
   N_MAIN_METHOD_SIGNATURE_FILTER = CODE_ITEM_START_MARKER + PASCAL_MAIN_METHOD_SIGNATURE;
-//----------------------REGEXP---------------------------------------------//
+
 const
+  //----------------------REGEXP---------------------------------------------//
   BASICALLY_METHOD_SIGNATURE_PATTERN =
-    '^(n\_)(main|((p\$)*([a-z][a-z0-9\_\.]+))(\$)*(\_\$)+(([a-z][a-z0-9\.]*)*(\_\$)+((\_)+(([a-z][a-z0-9\.]*)+((\$[a-z0-9\.]+)*)((\$\$[a-z0-9\.]*)*))(\_\$)?)*|(((?12))((?14))((?15))((?17))((?19))))*(\_\_\$)*(\$\_)((?14))((?15))((?17)))$';
-//----------------------END REGEXP-----------------------------------------//
+    '^(?:n\_)(?:(main)|((?:p\$)*(?:[a-z][a-z0-9\_\.]+))(?:\$)*(?:\_\$)(?:([a-z][a-z0-9\.]++)(?:\_\$)(?:(?:\_)((?:[a-z][a-z0-9\.]*+)+)((?:\$[a-z0-9\.]++)*)((?:\$\$[a-z0-9\.]*+)*)(?:\_\$)*)?(?:(?:\_)((?:[a-z][a-z0-9\.]*+)?)((?:\$[a-z0-9\.]++)*)((?:\$\$[a-z0-9\.]*+)?)(?:\_\$))?)*(?:\$\_)((?:[a-z][a-z0-9\.]*+)?)((?:\$[a-z0-9\.]++)*)((?:\$\$[a-z0-9\.]*+)?))$';
+  //--------------------------  MATCH INDEXES---------------------------------//
+  PASCAL_MAIN_INDEX = 1;
+  NAMESPACE_MATCH_INDEX = 2;
+  CLASS_NAME_MATCH_INDEX = 3;
+  CALLABLE_METHOD_INFO_GROUP_COUNT = 3;
+  MAXIMUM_MATCH_INDEX = 12;
+//----------------------END REGEXP-----------------------------------------//s
 implementation
 
-uses Regexpr, StrUtils;
+uses StrUtils;
 
 type
 { The finite state machine implemented following grammatic:
@@ -225,17 +314,11 @@ type
   @item(@bold(moduleObjectFile), object file for module(e.g. 'moduleName.o'))
   )
    @author Artem A. Bogomolov(artem.bogomolov.a@gmail.com)
- }
-
-  { TCallableInfoParser }
+TCallableInfoParser }
 
   TCallableInfoParser = class
   strict private
     FCallableInfoList: TCallableInfoCollection;
-    FRegExp: TRegExpr;
-    procedure FillAddressInfo(CallableInfo: TCallableInfo; AddressInfoString: string);
-    procedure FillNamingInfo(CallableInfo: TCallableInfo;
-      MethodSignatureString: string);
   public
    {Creates parser instance with specified CallableInfoList.
    @param CallableInfoList TMapFileInfo.CallableInfoList
@@ -249,35 +332,304 @@ type
       AddressInfoString: string);
   end;
 
+{ TMethodNameInfo }
+
+constructor TMethodNameInfo.Create(ACollection: TCollection);
+begin
+  inherited Create(ACollection);
+  Create;
+end;
+
+constructor TMethodNameInfo.Create;
+begin
+  FName := '';
+  FParameters := TStringList.Create;
+  FReturnType := '';
+end;
+
+destructor TMethodNameInfo.Destroy;
+begin
+  FReturnType := '';
+  FreeAndNil(FParameters);
+  FName := '';
+  inherited Destroy;
+end;
+
+function TMethodNameInfo.ToString: ansistring;
+var
+  parameterList: string;
+  i: integer;
+  methodType: string;
+begin
+  Result := '';
+  if FName = EmptyStr then
+    exit;
+  methodType := specialize IfThen<string>(FReturnType <> EmptyStr,
+    FUNCTION_MARKER, PROCEDURE_MARKER);
+  parameterList := '';
+  for i := 0 to FParameters.Count - 1 do
+    parameterList := parameterList + FParameters[i] + ',';
+  if Length(parameterList) > 1 then
+    parameterList := parameterList.Substring(0, Length(parameterList) - 1);
+  Result := Format(METHOD_NAME_INFO_PRINTABLE_FORMAT,
+    [methodType, FName, parameterList, FReturnType]);
+end;
+
+class procedure TMethodNameInfo.CreateMethodNameInfo(ATarget: TMethodNameInfo;
+  AName: string; AParameterString: string; AReturnType: string);
+var
+  tempArray: TStringArray;
+  i: integer;
+begin
+  ATarget.Name := AName;
+  tempArray := AParameterString.Split(['$'], TStringSplitOptions.ExcludeEmpty);
+  for i := 0 to Length(tempArray) - 1 do
+    ATarget.FParameters.Add(tempArray[i].trim());
+  SetLength(tempArray, 0);
+  tempArray := AReturnType.Split(['$$'], TStringSplitOptions.ExcludeEmpty);
+  if Length(tempArray) = 1 then
+    ATarget.ReturnType := tempArray[0].trim();
+end;
+
+{ TMethodInfoCollectionEnumerator }
+
+function TMethodInfoCollectionEnumerator.GetCurrent: TMethodNameInfo;
+begin
+  Result := inherited GetCurrent as TMethodNameInfo;
+end;
+
+procedure TMethodInfoCollection.SetItem(Index: integer; AValue: TMethodNameInfo);
+begin
+  inherited setItem(Index, AValue);
+end;
+
+function TMethodInfoCollection.GetItem(Index: integer): TMethodNameInfo;
+begin
+  Result := inherited GetItem(Index) as TMethodNameInfo;
+end;
+
+constructor TMethodInfoCollection.Create;
+begin
+  inherited Create(TMethodNameInfo);
+end;
+
+function TMethodInfoCollection.Add: TMethodNameInfo;
+begin
+  Result := inherited Add as TMethodNameInfo;
+end;
+
+function TMethodInfoCollection.GetEnumerator: TMethodInfoCollectionEnumerator;
+begin
+  Result := inherited GetEnumerator as TMethodInfoCollectionEnumerator;
+end;
+
+function TMethodInfoCollection.ToString: ansistring;
+var
+  i: integer;
+begin
+  Result := '';
+  for i := Count - 1 downto 0 do
+    Result := Result + Items[i].ToString + '>';
+end;
+
+{ TCallableNameInfo }
+constructor TCallableNameInfo.Create;
+begin
+  FUnitName := '';
+  FClassName := '';
+  FTargetMethodInfo := TMethodNameInfo.Create;
+  FWrappingMethods := TMethodInfoCollection.Create;
+  FRegExp := TRegExpr.Create(BASICALLY_METHOD_SIGNATURE_PATTERN);
+  FRegExp.Compile;
+end;
+
+constructor TCallableNameInfo.Create(MethodSignatureString: string);
+begin
+  Create;
+  writeln(format('parsing signature''%s''', [MethodSignatureString]));
+  if not FRegExp.Exec(MethodSignatureString) then
+    raise EMapInfoCreateException.CreateFmt('Can''t read signature ''%s''',
+      [MethodSignatureString]);
+  if (IsCurrentMethodPascalMain()) then
+  begin
+    CreatePascalMainMethodInfo();
+    exit;
+  end;
+  CreateRegularMethodInfo();
+
+  writeln(format('signature''%s'' parsed', [MethodSignatureString]));
+end;
+
+destructor TCallableNameInfo.Destroy;
+begin
+  FreeAndNil(FRegExp);
+  FreeAndNil(FWrappingMethods);
+  FreeAndNil(FTargetMethodInfo);
+  FClassName := '';
+  FUnitName := '';
+  inherited Destroy;
+end;
+
+procedure TCallableNameInfo.CreatePascalMainMethodInfo();
+begin
+  TMethodNameInfo.CreateMethodNameInfo(FTargetMethodInfo,
+    PASCAL_MAIN_METHOD_NAME,
+    EmptyStr,
+    EmptyStr);
+end;
+
+procedure TCallableNameInfo.CreateRegularMethodInfo();
+var
+  i: integer;
+  isTarget: boolean;
+begin
+  FUnitName := FRegExp.Match[NAMESPACE_MATCH_INDEX];
+  FClassName := FRegExp.Match[CLASS_NAME_MATCH_INDEX];
+  i := MAXIMUM_MATCH_INDEX;
+  isTarget := False;
+  while i > CLASS_NAME_MATCH_INDEX do
+  begin
+    if trim(FRegExp.Match[i - 2]) = EmptyStr then
+    begin
+      i := i - CALLABLE_METHOD_INFO_GROUP_COUNT;
+      continue;
+    end;
+    if not isTarget then
+    begin
+      isTarget := True;
+      TMethodNameInfo.CreateMethodNameInfo(FTargetMethodInfo,
+        FRegExp.Match[i - 2],
+        FRegExp.Match[i - 1],
+        FRegExp.Match[i]);
+    end
+    else
+    begin
+      TMethodNameInfo.CreateMethodNameInfo(FWrappingMethods.Add,
+        FRegExp.Match[i - 2],
+        FRegExp.Match[i - 1],
+        FRegExp.Match[i]);
+    end;
+    i := i - CALLABLE_METHOD_INFO_GROUP_COUNT;
+  end;
+end;
+
+function TCallableNameInfo.IsCurrentMethodPascalMain: boolean;
+begin
+  Result := trim(FRegExp.Match[PASCAL_MAIN_INDEX]) <> EmptyStr;
+
+end;
+
+function TCallableNameInfo.ToString: ansistring;
+begin
+  Result := format(CALLABLE_NAME_PRINTABLE_FORMAT,
+    [FUnitName, FClassName, FWrappingMethods.toString, FTargetMethodInfo.toString]);
+end;
+
+{ TCallableAddressInfo }
+
+constructor TCallableAddressInfo.Create;
+begin
+  FStartCallableAddress := 0;
+  FEndCallableAddress := 0;
+end;
+
+constructor TCallableAddressInfo.Create(AddressInfoString: string);
+var
+  AddressInfoStringParts: TStringArray;
+begin
+  AddressInfoStringParts := AddressInfoString.Split(' ',
+    TStringSplitOptions.ExcludeEmpty);
+  FStartCallableAddress :=
+    Hex2Dec64(AddressInfoStringParts[0].trim().Substring(2));
+  FEndCallableAddress :=
+    FStartCallableAddress + Hex2Dec64(AddressInfoStringParts[1].trim().Substring(2));
+end;
+
+destructor TCallableAddressInfo.Destroy;
+begin
+  FEndCallableAddress := 0;
+  FStartCallableAddress := 0;
+  inherited Destroy;
+end;
+
+function TCallableAddressInfo.IsMethodGammaAddress(Address: Pointer): boolean;
+var
+  AddressUint: SizeInt;
+begin
+  AddressUint := CodePtrUInt(Address);
+  Result := (AddressUint >= FStartCallableAddress) and
+    (AddressUint <= FEndCallableAddress);
+end;
+
 { TCallableInfo }
 
 constructor TCallableInfo.Create(ACollection: TCollection);
 begin
+  Create(ACollection, TCallableNameInfo.Create, TCallableAddressInfo.Create);
+end;
+
+constructor TCallableInfo.Create(ACollection: TCollection;
+  ACallableNameInfo: TCallableNameInfo; ACallableAddressInfo: TCallableAddressInfo);
+begin
   inherited Create(ACollection);
-  FParameters := TStringList.Create;
+  FCallableAddressInfo := ACallableAddressInfo;
+  FCallableNameInfo := ACallableNameInfo;
 end;
 
 destructor TCallableInfo.Destroy;
 begin
-  FreeAndNil(FParameters);
+  FreeAndNil(FCallableNameInfo);
+  FreeAndNil(FCallableAddressInfo);
   inherited Destroy;
 end;
 
 function TCallableInfo.IsMethodGammaAddress(Address: Pointer): boolean;
 begin
-  Result := (CodePtrUInt(Address) >= FStartCallableAddress) and
-    (CodePtrUInt(Address) <= FEndCallableAddress);
+  Result := FCallableAddressInfo.IsMethodGammaAddress(Address);
 end;
 
 function TCallableInfo.ToString: ansistring;
 begin
-  Result := FUnitName + LOG_PART_SEPARATOR + FClassName;
-{+ LOG_PART_SEPARATOR +
-    FMethodNames[0]};
-  if FReturnType = EmptyStr then
-    Result := Result + LOG_PART_SEPARATOR + PROC_TYPE
-  else
-    Result := Result + LOG_PART_SEPARATOR + FUNC_TYPE;
+  Result := FCallableNameInfo.ToString;
+end;
+
+{ TCallableInfoCollectionEnumerator }
+
+function TCallableInfoCollectionEnumerator.GetCurrent: TCallableInfo;
+begin
+  Result := inherited GetCurrent as TCallableInfo;
+end;
+
+{ TCallableInfoCollection }
+
+constructor TCallableInfoCollection.Create;
+begin
+  inherited Create(TCallableInfo);
+end;
+
+function TCallableInfoCollection.Add: TCallableInfo;
+begin
+  Result := inherited Add as TCallableInfo;
+end;
+
+procedure TCallableInfoCollection.SetItem(Index: integer; AValue: TCallableInfo);
+begin
+  inherited SetItem(Index, AValue);
+end;
+
+function TCallableInfoCollection.GetItem(Index: integer): TCallableInfo;
+begin
+  Result := inherited GetItem(Index) as TCallableInfo;
+end;
+
+function TCallableInfoCollection.GetEnumerator: TCallableInfoCollectionEnumerator;
+begin
+  Result := inherited GetEnumerator as TCallableInfoCollectionEnumerator;
+end;
+
+class function TCallableInfoCollection.CreateCallableInfoCollection: TCollection;
+begin
+  Result := TCallableInfoCollection.Create;
 end;
 
 { TMapFileInfo }
@@ -286,22 +638,9 @@ constructor TMapFileInfo.Create(AMapFileData: TStringDynArray;
   MethodSignatureFilter: string);
 var
   FilteredMapFileData: TStringDynArray;
-  Temp: TStringList;
-  i: integer;
 begin
   FilteredMapFileData := FilterMapFileDataString(AMapFileData, MethodSignatureFilter);
   Create;
-  Temp := TStringList.Create();
-  try
-    Temp.Duplicates := TDuplicates.dupError;
-    for i := 0 to round(Length(FilteredMapFileData) / 2) - 1 do
-      Temp.Add(FilteredMapFileData[i * 2]);
-    Temp.Sorted := True;
-    Temp.SaveToFile(
-      'c:\Users\artem.bogomolov.a\develop\projects\private\family-budget\family-budget-server\target\map.1');
-  finally
-    FreeAndNil(Temp);
-  end;
   ParsePreparedMapFileData(FilteredMapFileData);
 end;
 
@@ -313,7 +652,6 @@ end;
 
 destructor TMapFileInfo.Destroy;
 begin
-  FCallableInfoList.Clear;
   FreeAndNil(FCallableInfoList);
   inherited Destroy;
 end;
@@ -326,9 +664,9 @@ var
   CallableInfoParser: TCallableInfoParser;
 begin
   i := 0;
-  Count := High(AMapFileData);
+  Count := Length(AMapFileData);
   CallableInfoParser := TCallableInfoParser.Create(FCallableInfoList);
-  while i < Count - 1 do
+  while i < Count do
   begin
     MethodSignatureString := AMapFileData[i];
     Inc(i);
@@ -428,15 +766,16 @@ end;
 
 function TMapFileInfo.FindCallerInfoByAddress(CallerPointer: CodePointer): TCallableInfo;
 var
+  CallableInfo: TCallableInfo;
   i: integer;
 begin
   Result := nil;
   for i := 0 to FCallableInfoList.Count - 1 do
   begin
-    if TCallableInfo(FCallableInfoList.Items[i]).IsMethodGammaAddress(
-      CallerPointer) then
+    CallableInfo := FCallableInfoList.Items[i];
+    if CallableInfo.IsMethodGammaAddress(CallerPointer) then
     begin
-      Result := TCallableInfo(FCallableInfoList.Items[i]);
+      Result := CallableInfo;
       break;
     end;
   end;
@@ -447,112 +786,25 @@ begin
   Result := TMapFileInfo.Create;
 end;
 
-{ TCallableInfoCollectionEnumerator }
-
-function TCallableInfoCollectionEnumerator.GetCurrent: TCallableInfo;
-begin
-  Result := inherited GetCurrent as TCallableInfo;
-end;
-
-{ TCallableInfoCollection }
-
-constructor TCallableInfoCollection.Create;
-begin
-  inherited Create(TCallableInfo);
-end;
-
-function TCallableInfoCollection.Add: TCallableInfo;
-begin
-  Result := inherited Add as TCallableInfo;
-end;
-
-procedure TCallableInfoCollection.SetItem(Index: integer; AValue: TCallableInfo);
-begin
-  inherited SetItem(Index, AValue);
-end;
-
-function TCallableInfoCollection.GetItem(Index: integer): TCallableInfo;
-begin
-  Result := inherited GetItem(Index) as TCallableInfo;
-end;
-
-function TCallableInfoCollection.GetEnumerator: TCallableInfoCollectionEnumerator;
-begin
-  Result := inherited GetEnumerator as TCallableInfoCollectionEnumerator;
-end;
-
-class function TCallableInfoCollection.CreateCallableInfoCollection: TCollection;
-begin
-  Result := TCallableInfoCollection.Create;
-end;
-
 { TCallableInfoParser }
 
 constructor TCallableInfoParser.Create(var CallableInfoList: TCallableInfoCollection);
 begin
   FCallableInfoList := CallableInfoList;
-  FRegExp := TRegExpr.Create(BASICALLY_METHOD_SIGNATURE_PATTERN);
-  //FRegExp.ModifierG := True;
-  //FRegExp.ModifierM := True;
-  FRegExp.EmptyInputRaisesError := True;
-  FRegExp.Compile;
 end;
 
 destructor TCallableInfoParser.Destroy;
 begin
-  FreeAndNil(FRegExp);
   inherited Destroy;
-end;
-
-procedure TCallableInfoParser.FillAddressInfo(CallableInfo: TCallableInfo;
-  AddressInfoString: string);
-var
-  AddressInfoStringParts: TStringArray;
-begin
-  AddressInfoStringParts := AddressInfoString.Split(' ',
-    TStringSplitOptions.ExcludeEmpty);
-  CallableInfo.StartCallableAddress :=
-    Hex2Dec64(AddressInfoStringParts[0].trim().Substring(2));
-  CallableInfo.EndCallableAddress :=
-    CallableInfo.StartCallableAddress + Hex2Dec64(
-    AddressInfoStringParts[1].trim().Substring(2));
-end;
-
-procedure TCallableInfoParser.FillNamingInfo(CallableInfo: TCallableInfo;
-  MethodSignatureString: string);
-var
-  parameters: TStringArray;
-  i: integer;
-begin
-  writeln(format('parsing signature''%s''', [MethodSignatureString]));
-  FRegExp.Exec(MethodSignatureString);
-  repeat
-    for i := 0 to FRegExp.SubExprMatchCount do
-    begin
-      writeln(format('signature part %d is ''%s''', [i, FRegExp.Match[i]]));
-    end;
-  until FRegExp.ExecNext();
-  CallableInfo.UnitName := FRegExp.Match[2];
-  CallableInfo.ClassName := FRegExp.Match[5];
-  CallableInfo.AdditionalCallableInfo := FRegExp.Match[3];
-  CallableInfo.MethodName := FRegExp.Match[4];
-  parameters := string(FRegExp.Match[5]).Split(['$'], TStringSplitOptions.ExcludeEmpty);
-  for i := 0 to Length(parameters) - 1 do
-    CallableInfo.Parameters.Add(parameters[i]);
-  //  SetLength(parameters, 0);
-  CallableInfo.ReturnType := FRegExp.Match[6];
-  writeln(format('signature''%s'' parsed', [MethodSignatureString]));
 end;
 
 procedure TCallableInfoParser.ParseCallableInfoFromStrings(
   MethodSignatureString: string;
   AddressInfoString: string);
-var
-  CallableInfo: TCallableInfo;
 begin
-  CallableInfo := FCallableInfoList.Add;
-  FillNamingInfo(CallableInfo, MethodSignatureString);
-  FillAddressInfo(CallableInfo, AddressInfoString);
+  TCallableInfo.Create(FCallableInfoList,
+    TCallableNameInfo.Create(MethodSignatureString),
+    TCallableAddressInfo.Create(AddressInfoString));
 end;
 
 end.

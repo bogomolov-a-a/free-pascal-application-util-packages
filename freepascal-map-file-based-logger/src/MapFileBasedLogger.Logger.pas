@@ -88,8 +88,7 @@ uses
 
 const
 
-  {Linker map file code section end marker(data section started with string contain it).}
-  CODE_SECTION_END_MARKER = '.data';
+
   MAP_FILE_EXTENSION = '.map';
 
 type
@@ -170,7 +169,7 @@ begin
   {The section is empty. Try to load info from map file.}
   LoadMapFile(MethodSignatureFilter);
   {Try to write data into executable. }
-  // AppendSectionToExecutable();
+  AppendSectionToExecutable();
 end;
 
 destructor TMapFileInfoManager.Destroy;
@@ -218,7 +217,7 @@ begin
   MapFileDataStringArray := LoadTrimmedMapFile(MapFilePath);
   FMapFileInfo := TMapFileInfo.Create(MapFileDataStringArray, MethodSignatureFilter);
   SetLength(MapFileDataStringArray, 0);
-  //DeleteFile(MapFilePath);
+  DeleteFile(MapFilePath);
 end;
 
 procedure TMapFileInfoManager.AppendSectionToExecutable();
@@ -446,10 +445,9 @@ var
 begin
   CallerPointer := get_caller_addr(get_frame);
   CallerInfo := FMapFileInfoManipulator.FindCallerInfoByAddress(CallerPointer);
-
   if (FAppenders = nil) then
     exit;
-  for i := Low(FAppenders) to High(FAppenders) do
+  for i := 0 to Length(FAppenders) - 1 do
   begin
     Appender := FAppenders[i];
     if not (Appender.AppendMessageTo(LogLevel, CallerInfo, Msg)) then

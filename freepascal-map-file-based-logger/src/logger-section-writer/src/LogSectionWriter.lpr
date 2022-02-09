@@ -7,15 +7,16 @@ uses
   cthreads,
  {Widestring manager needed for widestring support}
   cwstring,
-                    {$ENDIF} {$IFDEF WINDOWS}
+                          {$ENDIF} {$IFDEF WINDOWS}
   Windows, {for setconsoleoutputcp}
-                    {$ENDIF}
+                          {$ENDIF}
 
   Classes,
   CustApp,
   { you can add units after this }
   MapFileBasedLogger.Logger,
-  SysUtils;
+  SysUtils,
+  MapFileBasedLogger.BasicTypes;
 
 const
   FILE_NAME_OPTION = 'f';
@@ -57,8 +58,9 @@ type
       manipulator := nil;
     end;
     {check}
-    {try
-      manipulator := TMapFileInfoManagerFactory.CreateMapFileInfoManager(ExeFilePath, True);
+    try
+      manipulator := TMapFileInfoManagerFactory.CreateMapFileInfoManager(
+        ExeFilePath, '', True);
       logger := TMapFileBasedLoggerFactory.CreateLoggerFrom(manipulator);
     except
       on e: Exception do
@@ -66,7 +68,7 @@ type
         writeln(e.Message);
         exitCode := -1;
       end;
-    end;}
+    end;
     logger := nil;
     manipulator := nil;
     // stop program loop
