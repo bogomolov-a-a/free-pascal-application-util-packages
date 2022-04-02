@@ -145,13 +145,21 @@ begin
   FullFileName := GetCurrentFileName();
 end;
 
+destructor TRotateFileAppender.Destroy;
+begin
+  FreeAndNil(FCurrentFileStream);
+  inherited Destroy;
+end;
+
 function TRotateFileAppender.WriteToAppendable(FullMessage: string): boolean;
 var
   MessageLength, Count: integer;
+  FullMessageBytes: TBytes;
 begin
   FullMessage := FullMessage + LineEnding;
-  MessageLength := Length(FullMessage);
-  Count := GetCurrentFileStream().Write(FullMessage, MessageLength);
+  FullMEssageBytes := TEncoding.UTF8.GetBytes(FullMessage);
+  MessageLength := LEngth(FullMessageBytes);
+  Count := GetCurrentFileStream().Write64(FullMessageBytes, 0, MessageLength);
   Result := MessageLength = Count;
 end;
 
@@ -212,11 +220,7 @@ begin
   Result := FileDate <> Date;
 end;
 
-destructor TRotateFileAppender.Destroy;
-begin
-  FreeAndNil(FCurrentFileStream);
-  inherited Destroy;
-end;
+
 
 { TConsoleAppender }
 
@@ -247,8 +251,8 @@ end;
 
 { TAppenderFactory }
 
-class function TAppenderFactory.BuildConsoleAppender(LogFilterArray:
-  TLogFilterArray): ILogAppender;
+class function TAppenderFactory.BuildConsoleAppender(LogFilterArray: TLogFilterArray):
+ILogAppender;
 begin
   Result := TConsoleAppender.Create(LogFilterArray);
 end;
